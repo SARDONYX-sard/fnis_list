@@ -1,0 +1,17 @@
+{
+    "[csharp]": {
+        "editor.defaultFormatter": "ms-dotnettools.csharp",
+        "editor.maxTokenizationLineLength": 2500
+    },
+    "editor.formatOnSave": true,
+    "files.associations": {},
+    "files.exclude": {
+        "**/obj": true,
+        "**/bin": true
+    },
+    "files.watcherExclude": {
+        "**/.git/objects/**": true
+        // "**/obj/**": true
+    },
+    "cSpell.words": ["FNIS", "Headtracking", "Modders", "Skyrim", "Xunit"]
+}
