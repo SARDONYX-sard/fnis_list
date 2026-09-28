@@ -83,7 +83,9 @@ public static class FnisLineParser
             flags.BlendTime,
             flags.Duration,
             flags.Triggers,
-            flags.Triggers2);
+            flags.Triggers2,
+            new List<FnisMotionData>(),
+            new List<FnisRotationData>());
 
         return FnisListParseResult<FnisAnimation>.Success(animation, fileData.NextPos);
     }

@@ -19,6 +19,10 @@ public readonly struct FnisAnimation
     private readonly List<FnisTriggerData> _triggers;
     private readonly List<FnisTriggerData> _triggers2;
 
+
+    private readonly List<FnisMotionData> _motionData;
+    private readonly List<FnisRotationData> _rotationData;
+
     internal FnisAnimation(
         FnisAnimType type,
         TextSpan @event,
@@ -28,7 +32,9 @@ public readonly struct FnisAnimation
         float? blendTime,
         float? duration,
         List<FnisTriggerData> triggers,
-        List<FnisTriggerData> triggers2)
+        List<FnisTriggerData> triggers2,
+          List<FnisMotionData> motionData,
+        List<FnisRotationData> rotationData)
     {
         this._type = type;
         this._event = @event;
@@ -39,6 +45,8 @@ public readonly struct FnisAnimation
         this._duration = duration;
         this._triggers = triggers;
         this._triggers2 = triggers2;
+        this._motionData = motionData;
+        this._rotationData = rotationData;
     }
 
     public FnisAnimType Type => this._type;
@@ -64,6 +72,9 @@ public readonly struct FnisAnimation
     public int TriggerCount => this._triggers.Count;
     public int Trigger2Count => this._triggers2.Count;
     public int ObjectCount => this._objects.Count;
+
+    public int MotionDataCount => this._motionData.Count;
+    public int RotationDataCount => this._rotationData.Count;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryGetTrigger(ReadOnlySpan<char> source, int index, out FnisTrigger trigger)
@@ -107,5 +118,41 @@ public readonly struct FnisAnimation
         value = new FnisAnimObject(data.Name.Slice(source), data.Role);
 
         return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool TryGetMotionData(int index, out FnisMotionData value)
+    {
+        if ((uint)index >= (uint)this.MotionDataCount)
+        {
+            value = default;
+            return false;
+        }
+
+        value = this._motionData[index];
+        return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool TryGetRotationData(int index, out FnisRotationData value)
+    {
+        if ((uint)index >= (uint)this.RotationDataCount)
+        {
+            value = default;
+            return false;
+        }
+
+        value = this._rotationData[index];
+        return true;
+    }
+
+    internal void AddMotionData(FnisMotionData value)
+    {
+        this._motionData.Add(value);
+    }
+
+    internal void AddRotationData(FnisRotationData value)
+    {
+        this._rotationData.Add(value);
     }
 }

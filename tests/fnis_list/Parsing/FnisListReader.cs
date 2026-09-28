@@ -689,4 +689,179 @@ public sealed class FnisListReaderTests
     {
         return value.Replace("\r\n", "\n");
     }
+
+    [Fact]
+    public void ReadsMotionAndRotationData()
+    {
+        const string source = """
+        b Attack attack.hkx
+        MD 1.25 10 20 30
+        RD 1.25 45
+        """;
+
+        FnisListReader reader = new(source);
+
+        FnisListParseResult<FnisPattern> result = reader.Parse();
+
+        Assert.True(result.IsSuccess);
+
+        FnisAnimation animation = Assert.Single(result.Value.Animations);
+
+        Assert.Equal(FnisAnimType.Basic, animation.Type);
+        Assert.Equal(1, animation.MotionDataCount);
+        Assert.Equal(1, animation.RotationDataCount);
+
+        Assert.True(animation.TryGetMotionData(0, out FnisMotionData motion));
+        Assert.Equal(1.25f, motion.Time);
+        Assert.Equal(10.0f, motion.DeltaX);
+        Assert.Equal(20.0f, motion.DeltaY);
+        Assert.Equal(30.0f, motion.DeltaZ);
+
+        Assert.True(animation.TryGetRotationData(0, out FnisRotationData rotation));
+        Assert.Equal(FnisRotationDataKind.DeltaZAngle, rotation.Kind);
+        Assert.Equal(45.0f, rotation.ZAngle);
+    }
+
+    [Fact]
+    public void ReadsMultipleMotionAndRotationData()
+    {
+        const string source = """
+        b Attack attack.hkx
+        RD 0.5 30
+        MD 1.25 10 20 30
+        MD 2.0 -10 0 40
+        RD 2.0 -60
+        """;
+
+        FnisListReader reader = new(source);
+
+        FnisListParseResult<FnisPattern> result = reader.Parse();
+
+        Assert.True(result.IsSuccess);
+
+        FnisAnimation animation = Assert.Single(result.Value.Animations);
+
+        Assert.Equal(2, animation.MotionDataCount);
+        Assert.Equal(2, animation.RotationDataCount);
+
+        Assert.True(animation.TryGetMotionData(0, out FnisMotionData firstMotion));
+        Assert.Equal(1.25f, firstMotion.Time);
+        Assert.Equal(10.0f, firstMotion.DeltaX);
+        Assert.Equal(20.0f, firstMotion.DeltaY);
+        Assert.Equal(30.0f, firstMotion.DeltaZ);
+
+        Assert.True(animation.TryGetMotionData(1, out FnisMotionData secondMotion));
+        Assert.Equal(2.0f, secondMotion.Time);
+        Assert.Equal(-10.0f, secondMotion.DeltaX);
+        Assert.Equal(0.0f, secondMotion.DeltaY);
+        Assert.Equal(40.0f, secondMotion.DeltaZ);
+
+        Assert.True(animation.TryGetRotationData(0, out FnisRotationData firstRotation));
+        Assert.Equal(0.5f, firstRotation.Time);
+        Assert.Equal(FnisRotationDataKind.DeltaZAngle, firstRotation.Kind);
+        Assert.Equal(30.0f, firstRotation.ZAngle);
+
+        Assert.True(animation.TryGetRotationData(1, out FnisRotationData secondRotation));
+        Assert.Equal(2.0f, secondRotation.Time);
+        Assert.Equal(FnisRotationDataKind.DeltaZAngle, secondRotation.Kind);
+        Assert.Equal(-60.0f, secondRotation.ZAngle);
+    }
+
+    [Fact]
+    public void AssociatesMotionAndRotationDataWithPreviousAnimation()
+    {
+        const string source = """
+        b First first.hkx
+        MD 0.5 1 2 3
+        RD 0.5 15
+        b Second second.hkx
+        MD 1.25 4 5 6
+        RD 1.25 -30
+        """;
+
+        FnisListReader reader = new(source);
+
+        FnisListParseResult<FnisPattern> result = reader.Parse();
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value.Animations.Count);
+
+        FnisAnimation first = result.Value.Animations[0];
+        Assert.Equal("First", first.AnimEvent(source));
+        Assert.Equal(1, first.MotionDataCount);
+        Assert.Equal(1, first.RotationDataCount);
+
+        Assert.True(first.TryGetMotionData(0, out FnisMotionData firstMotion));
+        Assert.Equal(0.5f, firstMotion.Time);
+
+        Assert.True(first.TryGetRotationData(0, out FnisRotationData firstRotation));
+        Assert.Equal(15.0f, firstRotation.ZAngle);
+
+        FnisAnimation second = result.Value.Animations[1];
+        Assert.Equal("Second", second.AnimEvent(source));
+        Assert.Equal(1, second.MotionDataCount);
+        Assert.Equal(1, second.RotationDataCount);
+
+        Assert.True(second.TryGetMotionData(0, out FnisMotionData secondMotion));
+        Assert.Equal(1.25f, secondMotion.Time);
+
+        Assert.True(second.TryGetRotationData(0, out FnisRotationData secondRotation));
+        Assert.Equal(-30.0f, secondRotation.ZAngle);
+    }
+
+    [Fact]
+    public void ExampleTest()
+    {
+        // string source = File.ReadAllText("FNIS_List.txt");
+        string source = """
+    Version 7.0
+
+    b Attack attack.hkx
+    MD 1.25 10 20 30
+    RD 1.25 45
+
+    b Walk walk.hkx
+    MD 2.0 0 10 0
+    RD 2.0 -30
+    """;
+
+        ReadOnlySpan<char> span = source.AsSpan();
+
+        FnisListReader reader = new(span);
+        FnisListParseResult<FnisPattern> result = reader.Parse();
+
+        Assert.True(result.IsSuccess);
+
+        FnisPattern pattern = result.Value;
+
+        string[] expectedEvents = ["Attack", "Walk"];
+        string[] expectedFiles = ["attack.hkx", "walk.hkx"];
+        float[][] expectedMotionData = [[1.25f, 10.0f, 20.0f, 30.0f], [2.0f, 0.0f, 10.0f, 0.0f]];
+        float[] expectedRotationAngles = [45.0f, -30.0f];
+
+        Assert.Equal(expectedEvents.Length, pattern.Animations.Count);
+
+        for (int i = 0; i < pattern.Animations.Count; i++)
+        {
+            FnisAnimation animation = pattern.Animations[i];
+
+            Assert.Equal(FnisAnimType.Basic, animation.Type);
+            Assert.Equal(expectedEvents[i], animation.AnimEvent(span));
+            Assert.Equal(expectedFiles[i], animation.AnimFile(span));
+
+
+            Assert.Equal(1, animation.MotionDataCount);
+            Assert.True(animation.TryGetMotionData(0, out FnisMotionData motion));
+            Assert.Equal(expectedMotionData[i][0], motion.Time);
+            Assert.Equal(expectedMotionData[i][1], motion.DeltaX);
+            Assert.Equal(expectedMotionData[i][2], motion.DeltaY);
+            Assert.Equal(expectedMotionData[i][3], motion.DeltaZ);
+
+            Assert.Equal(1, animation.RotationDataCount);
+
+            Assert.True(animation.TryGetRotationData(0, out FnisRotationData rotation));
+            Assert.Equal(FnisRotationDataKind.DeltaZAngle, rotation.Kind);
+            Assert.Equal(expectedRotationAngles[i], rotation.ZAngle);
+        }
+    }
 }

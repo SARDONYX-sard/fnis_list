@@ -66,6 +66,8 @@ public ref struct FnisListReader
             TextSpan line = this.GetCurrentLine();
             ReadOnlySpan<char> lineText = line.Slice(this._source);
 
+            // /////////////////////////////////////////////////////////////////////////////////////////////////////////
+            // Format: Version v<D>.<D>
             if (FnisLineParser.IsVersionLine(lineText))
             {
                 if (!FnisLineParser.TryParseVersion(lineText, out int major, out int minor))
@@ -79,6 +81,49 @@ public ref struct FnisListReader
 
                 continue;
             }
+
+            // /////////////////////////////////////////////////////////////////////////////////////////////////////////
+            // Format: MD <time:f32> <x> <y> <z>
+            if (FnisRotationParser.IsMotionLine(lineText))
+            {
+                if (animations.Count == 0)
+                {
+                    return FnisListParseResult<FnisPattern>.Failure(FnisListParseErrorKind.InvalidSyntax, line.Pos);
+                }
+
+                FnisListParseResult<FnisMotionData> result = FnisRotationParser.ParseMotion(this._source, line);
+                if (result.IsFailure)
+                {
+                    return FnisListParseResult<FnisPattern>.Failure(result.Error, result.Pos);
+                }
+
+                animations[^1].AddMotionData(result.Value);// push to prev animation
+                this._position = FnisLineParser.NextLine(this._source, line.End);
+
+                continue;
+            }
+
+            // /////////////////////////////////////////////////////////////////////////////////////////////////////////
+            // Format: RD <time:f32> <x> <y> <z>
+            if (FnisRotationParser.IsRotationLine(lineText))
+            {
+                if (animations.Count == 0)
+                {
+                    return FnisListParseResult<FnisPattern>.Failure(FnisListParseErrorKind.InvalidSyntax, line.Pos);
+                }
+
+                FnisListParseResult<FnisRotationData> result = FnisRotationParser.ParseRotation(this._source, line);
+                if (result.IsFailure)
+                {
+                    return FnisListParseResult<FnisPattern>.Failure(result.Error, result.Pos);
+                }
+                animations[^1].AddRotationData(result.Value); // push to prev animation
+
+                this._position = FnisLineParser.NextLine(this._source, line.End);
+                continue;
+            }
+
+            // /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             // Peek FNIS type
             FnisListParseResult<FnisTypeData> typeResult = FnisTypeParser.Parse(this._source, line);
@@ -160,10 +205,7 @@ public ref struct FnisListReader
 
                         animations.Add(animation);
 
-                        this._position = FnisLineParser.NextLine(
-                            this._source,
-                            line.End);
-
+                        this._position = FnisLineParser.NextLine(this._source, line.End);
                         break;
                     }
             }
