@@ -139,7 +139,7 @@ public static class FnisAnimObjectParser
         }
         else
         {
-            return FnisListParseResult<FnisAnimObjectData>.Failure(FnisListParseErrorKind.InvalidPairAndKillRoleNumber, tokenSpan.Pos);
+            return FnisListParseResult<FnisAnimObjectData>.Failure(FnisListParseErrorKind.InvalidPairedAndKillRoleNumber, tokenSpan.Pos);
         }
 
         FnisAnimObjectData value = new(new TextSpan(tokenSpan.Pos, name.Length), actorRole);

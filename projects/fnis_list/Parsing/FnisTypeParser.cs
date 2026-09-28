@@ -29,14 +29,35 @@ public static class FnisTypeParser
             return FnisListParseResult<FnisTypeData>.Failure(FnisListParseErrorKind.UnexpectedEnd, position);
         }
 
-        if (TryConsumeToken(source, ref position, end, "so"))
+        if (TryConsumeToken(source, ref position, end, "AnimVar"))
         {
-            return Success(FnisAnimType.SequencedOptimized, position);
+            return Success(FnisAnimType.AnimVar, position);
         }
 
-        if (TryConsumeToken(source, ref position, end, "pa"))
+        if (TryConsumeToken(source, ref position, end, "AAPrefix"))
         {
-            return Success(FnisAnimType.Paired, position);
+            return Success(FnisAnimType.Alternate, position);
+        }
+
+        if (TryConsumeToken(source, ref position, end, "fuo"))
+        {
+            return Success(FnisAnimType.FurnitureOptimized, position);
+        }
+
+        if (TryConsumeToken(source, ref position, end, "ofa"))
+        {
+            return Success(FnisAnimType.OffsetArm, position);
+        }
+
+
+        if (TryConsumeToken(source, ref position, end, "ch"))
+        {
+            return Success(FnisAnimType.Chair, position);
+        }
+
+        if (TryConsumeToken(source, ref position, end, "fu"))
+        {
+            return Success(FnisAnimType.Furniture, position);
         }
 
         if (TryConsumeToken(source, ref position, end, "km"))
@@ -44,19 +65,34 @@ public static class FnisTypeParser
             return Success(FnisAnimType.KillMove, position);
         }
 
-        if (TryConsumeToken(source, ref position, end, "b"))
+        if (TryConsumeToken(source, ref position, end, "pa"))
         {
-            return Success(FnisAnimType.Basic, position);
+            return Success(FnisAnimType.Paired, position);
         }
 
-        if (TryConsumeToken(source, ref position, end, "s"))
+        if (TryConsumeToken(source, ref position, end, "so"))
         {
-            return Success(FnisAnimType.Sequenced, position);
+            return Success(FnisAnimType.SequencedOptimized, position);
         }
 
         if (TryConsumeToken(source, ref position, end, "+"))
         {
             return Success(FnisAnimType.SequencedContinued, position);
+        }
+
+        if (TryConsumeToken(source, ref position, end, "b"))
+        {
+            return Success(FnisAnimType.Basic, position);
+        }
+
+        if (TryConsumeToken(source, ref position, end, "o"))
+        {
+            return Success(FnisAnimType.AnimObject, position);
+        }
+
+        if (TryConsumeToken(source, ref position, end, "s"))
+        {
+            return Success(FnisAnimType.Sequenced, position);
         }
 
         return FnisListParseResult<FnisTypeData>.Failure(FnisListParseErrorKind.InvalidSyntax, position);
@@ -67,7 +103,9 @@ public static class FnisTypeParser
         return FnisListParseResult<FnisTypeData>.Success(new FnisTypeData(type, nextPos), nextPos);
     }
 
-
+    /// <remarks>
+    /// NOTE: Case ignored
+    /// </remarks>
     private static bool TryConsumeToken(ReadOnlySpan<char> source, ref int position, int end, ReadOnlySpan<char> token)
     {
         if (position + token.Length > end)
@@ -77,7 +115,7 @@ public static class FnisTypeParser
 
         int start = position;
 
-        if (!source.Slice(position, token.Length).SequenceEqual(token))
+        if (!source.Slice(position, token.Length).Equals(token, StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }

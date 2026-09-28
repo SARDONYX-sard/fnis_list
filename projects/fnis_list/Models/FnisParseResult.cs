@@ -135,6 +135,7 @@ public readonly struct FnisListParseResult<T>
             $"  │ {new string(' ', column)}^ {ErrorMessage(this._error)}";
     }
 
+
     /// <summary>
     /// Return EnumErrorKind to readable message.
     /// </summary>
@@ -160,6 +161,9 @@ public readonly struct FnisListParseResult<T>
             FnisListParseErrorKind.InvalidNumber
                 => "invalid number",
 
+            FnisListParseErrorKind.UnexpectedAnimationObject
+                => "Animation object data (remaining input) was provided without the -o flag.",
+
             FnisListParseErrorKind.InvalidAnimationObject
                 => "invalid animation object",
 
@@ -169,8 +173,26 @@ public readonly struct FnisListParseResult<T>
             FnisListParseErrorKind.PairAndKillRoleRequiresSlash
                 => "PairedAndKill animation objects require '/' followed by a role number",
 
-            FnisListParseErrorKind.InvalidPairAndKillRoleNumber
+            FnisListParseErrorKind.InvalidPairedAndKillRoleNumber
                 => "invalid PairedAndKill role number; only 1 and 2 are valid",
+
+            FnisListParseErrorKind.ChairRequiresThreeContinuations
+                => "Chair requires at least 3 continuation animations",
+
+            FnisListParseErrorKind.ChairAllowsOnlyNoFlagsOrAnimationObjects
+                => "Chair allows no flags or the -o flag only",
+
+            FnisListParseErrorKind.FurnitureRequiresAcyclic
+                => "Furniture requires the -a flag",
+
+            FnisListParseErrorKind.FurnitureRequiresThreeAnimations
+                => "Furniture requires at least 3 animations",
+
+            FnisListParseErrorKind.FurnitureRequiresAcyclicLastAnimation
+                => "the last Furniture animation requires the -a flag",
+
+            FnisListParseErrorKind.FurnitureSecondToLastMustBeCyclic
+                => "the second-to-last Furniture animation must be cyclic",
 
             _ => "unknown parse error",
         };
@@ -213,6 +235,11 @@ public enum FnisListParseErrorKind : byte
     InvalidNumber,
 
     /// <summary>
+    /// Animation object data was provided without the <c>-o</c> flag.
+    /// </summary>
+    UnexpectedAnimationObject,
+
+    /// <summary>
     /// Invalid AnimObject Syntax.
     /// </summary>
     InvalidAnimationObject,
@@ -231,5 +258,35 @@ public enum FnisListParseErrorKind : byte
     /// The role number of a PairedAndKill animation object is invalid.
     /// Only 1 and 2 are valid.
     /// </summary>
-    InvalidPairAndKillRoleNumber,
+    InvalidPairedAndKillRoleNumber,
+
+    /// <summary>
+    /// A Chair requires at least three continuation animations.
+    /// </summary>
+    ChairRequiresThreeContinuations,
+
+    /// <summary>
+    /// A Chair allows no flags or the <c>-o</c> flag only.
+    /// </summary>
+    ChairAllowsOnlyNoFlagsOrAnimationObjects,
+
+    /// <summary>
+    /// A Furniture animation requires the <c>-a</c> flag.
+    /// </summary>
+    FurnitureRequiresAcyclic,
+
+    /// <summary>
+    /// A Furniture sequence requires at least three animations.
+    /// </summary>
+    FurnitureRequiresThreeAnimations,
+
+    /// <summary>
+    /// The last animation in a Furniture sequence requires the <c>-a</c> flag.
+    /// </summary>
+    FurnitureRequiresAcyclicLastAnimation,
+
+    /// <summary>
+    /// The second-to-last Furniture animation must be cyclic.
+    /// </summary>
+    FurnitureSecondToLastMustBeCyclic,
 }

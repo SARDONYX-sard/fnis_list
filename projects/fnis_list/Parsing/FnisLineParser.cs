@@ -8,6 +8,10 @@ public static class FnisLineParser
 {
     public static FnisListParseResult<FnisAnimation> Parse(ReadOnlySpan<char> source, TextSpan line)
     {
+        // FORMAT: <type> [flags] <event> <file> [anim_objects]
+
+        // -------------------------------------------------------------------------------------------------------------
+        // <type>
         FnisListParseResult<FnisTypeData> typeResult = FnisTypeParser.Parse(source, line);
         if (typeResult.IsFailure)
         {
@@ -15,6 +19,8 @@ public static class FnisLineParser
         }
         FnisTypeData type = typeResult.Value;
 
+        // -------------------------------------------------------------------------------------------------------------
+        // [ flags ]
         FnisListParseResult<FnisFlagData> flagResult = FnisFlagParser.ParseLine(source, TextSpan.FromRange(type.NextPos, line.End));
         if (flagResult.IsFailure)
         {
@@ -22,6 +28,8 @@ public static class FnisLineParser
         }
         FnisFlagData flags = flagResult.Value;
 
+        // -------------------------------------------------------------------------------------------------------------
+        // <event>
         FnisListParseResult<FnisTokenData> eventResult = FnisTokenParser.Parse(source, TextSpan.FromRange(flags.NextPos, line.End));
         if (eventResult.IsFailure)
         {
@@ -29,6 +37,8 @@ public static class FnisLineParser
         }
         FnisTokenData eventData = eventResult.Value;
 
+        // -------------------------------------------------------------------------------------------------------------
+        // <file>
         FnisListParseResult<FnisTokenData> fileResult = FnisTokenParser.Parse(source, TextSpan.FromRange(eventData.NextPos, line.End));
         if (fileResult.IsFailure)
         {
@@ -36,15 +46,34 @@ public static class FnisLineParser
         }
         FnisTokenData fileData = fileResult.Value;
 
-        bool isPairAndKill = type.Type is FnisAnimType.Paired or FnisAnimType.KillMove;
-        FnisListParseResult<List<FnisAnimObjectData>> objectResult =
-            FnisAnimObjectParser.Parse(source, TextSpan.FromRange(fileData.NextPos, line.End), isPairAndKill);
-        if (objectResult.IsFailure)
+        // -------------------------------------------------------------------------------------------------------------
+        // [anim object]
+        List<FnisAnimObjectData> objects;
+        if (flags.Flags.HasFlag(FnisAnimFlags.AnimObjects))
         {
-            return FnisListParseResult<FnisAnimation>.Failure(objectResult.Error, objectResult.Pos);
+            bool isPairAndKill = type.Type is FnisAnimType.Paired or FnisAnimType.KillMove;
+            FnisListParseResult<List<FnisAnimObjectData>> objectResult =
+                FnisAnimObjectParser.Parse(source, TextSpan.FromRange(fileData.NextPos, line.End), isPairAndKill);
+            if (objectResult.IsFailure)
+            {
+                return FnisListParseResult<FnisAnimation>.Failure(objectResult.Error, objectResult.Pos);
+            }
+            objects = objectResult.Value;
         }
-        List<FnisAnimObjectData> objects = objectResult.Value;
+        else
+        {
 
+            int position = fileData.NextPos;
+            SkipWhitespaceAndComments(source, ref position, line.End);
+
+            if (position < line.End)
+            {
+                return FnisListParseResult<FnisAnimation>.Failure(FnisListParseErrorKind.UnexpectedAnimationObject, position);
+            }
+            objects = [];
+        }
+
+        // -------------------------------------------------------------------------------------------------------------
         FnisAnimation animation = new FnisAnimation(
             type.Type,
             eventData.Span,
@@ -219,9 +248,9 @@ public static class FnisLineParser
         return true;
     }
 
-    /// <summary>
-    /// Ignore case
-    /// </summary>
+    /// <remarks>
+    /// NOTE: Case ignored
+    /// </remarks>
     private static bool ConsumeLiteral(ReadOnlySpan<char> source, ref int position, ReadOnlySpan<char> value)
     {
         if (position + value.Length > source.Length)

@@ -115,14 +115,14 @@ public sealed class FnisLineParserTests
     [Fact]
     public void ParsesKillMoveAnimation()
     {
-        const string source = "km -ac,h,D35.5,TStart/1.0,TEnd/20.0 KillMove killmove.hkx Weapon/1 Victim/2";
+        const string source = "km -ac,h,o,D35.5,TStart/1.0,TEnd/20.0 KillMove killmove.hkx Weapon/1 Victim/2";
 
         FnisAnimation animation = ParseSingle(source);
 
         Assert.Equal(FnisAnimType.KillMove, animation.Type);
         Assert.Equal("KillMove", animation.AnimEvent(source));
         Assert.Equal("killmove.hkx", animation.AnimFile(source));
-        Assert.Equal(FnisAnimFlags.AnimatedCamera | FnisAnimFlags.HeadTracking, animation.Flags);
+        Assert.Equal(FnisAnimFlags.AnimatedCamera | FnisAnimFlags.HeadTracking | FnisAnimFlags.AnimObjects, animation.Flags);
         Assert.Equal(35.5f, animation.Duration);
         Assert.Equal(2, animation.TriggerCount);
         Assert.Equal(0, animation.Trigger2Count);
@@ -147,8 +147,8 @@ public sealed class FnisLineParserTests
 
 
     [Theory]
-    [InlineData("b Attack attack.hkx Sword Shield")]
-    [InlineData("pa Attack attack.hkx Sword/1 Shield/2")]
+    [InlineData("b -o Attack attack.hkx Sword Shield")]
+    [InlineData("pa -o Attack attack.hkx Sword/1 Shield/2")]
     public void ParsesObjectsOk(string source)
     {
         FnisAnimation animation = ParseSingle(source);
@@ -156,10 +156,10 @@ public sealed class FnisLineParserTests
     }
 
     [Theory]
-    [InlineData("b Attack attack.hkx Sword/1", FnisListParseErrorKind.NumberedAnimationObjectRequiresPairAndKill)]
-    [InlineData("pa Attack attack.hkx Sword/3", FnisListParseErrorKind.InvalidPairAndKillRoleNumber)]
-    [InlineData("pa Attack attack.hkx Sword/foo", FnisListParseErrorKind.InvalidPairAndKillRoleNumber)]
-    [InlineData("pa Attack attack.hkx Sword", FnisListParseErrorKind.PairAndKillRoleRequiresSlash)]
+    [InlineData("b -o Attack attack.hkx Sword/1", FnisListParseErrorKind.NumberedAnimationObjectRequiresPairAndKill)]
+    [InlineData("pa -o Attack attack.hkx Sword/3", FnisListParseErrorKind.InvalidPairedAndKillRoleNumber)]
+    [InlineData("pa -o Attack attack.hkx Sword/foo", FnisListParseErrorKind.InvalidPairedAndKillRoleNumber)]
+    [InlineData("pa -o Attack attack.hkx Sword", FnisListParseErrorKind.PairAndKillRoleRequiresSlash)]
     public void ParsesObjectsError(string source, FnisListParseErrorKind expectedError)
     {
         FnisListParseResult<FnisAnimation> result = FnisLineParser.Parse(source, TextSpan.FromRange(0, source.Length));
@@ -190,7 +190,7 @@ public sealed class FnisLineParserTests
     [Fact]
     public void PreservesAbsoluteTextSpanPositions()
     {
-        const string source = "header\n\nb -a Attack attack.hkx Sword Shield\n";
+        const string source = "header\n\nb -a,o Attack attack.hkx Sword Shield\n";
 
         int lineStart = source.IndexOf("b -a", StringComparison.Ordinal);
         int lineEnd = source.IndexOf('\n', lineStart);

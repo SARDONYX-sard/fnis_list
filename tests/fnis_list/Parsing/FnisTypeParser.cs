@@ -6,16 +6,20 @@ namespace fnis_list.Tests;
 public sealed class FnisTypeParserTests
 {
     [Theory]
-    [InlineData("so", FnisAnimType.SequencedOptimized, 2)]
-    [InlineData("pa", FnisAnimType.Paired, 2)]
+    [InlineData("AnimVar", FnisAnimType.AnimVar, 7)]
+    [InlineData("AAPrefix", FnisAnimType.Alternate, 8)]
+    [InlineData("fuo", FnisAnimType.FurnitureOptimized, 3)]
+    [InlineData("ofa", FnisAnimType.OffsetArm, 3)]
+    [InlineData("ch", FnisAnimType.Chair, 2)]
+    [InlineData("fu", FnisAnimType.Furniture, 2)]
     [InlineData("km", FnisAnimType.KillMove, 2)]
-    [InlineData("b", FnisAnimType.Basic, 1)]
-    [InlineData("s", FnisAnimType.Sequenced, 1)]
+    [InlineData("pa", FnisAnimType.Paired, 2)]
+    [InlineData("so", FnisAnimType.SequencedOptimized, 2)]
     [InlineData("+", FnisAnimType.SequencedContinued, 1)]
-    public void ParsesType(
-        string source,
-        FnisAnimType expectedType,
-        int expectedNextPos)
+    [InlineData("b", FnisAnimType.Basic, 1)]
+    [InlineData("o", FnisAnimType.AnimObject, 1)]
+    [InlineData("s", FnisAnimType.Sequenced, 1)]
+    public void ParsesType(string source, FnisAnimType expectedType, int expectedNextPos)
     {
         FnisListParseResult<FnisTypeData> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length)); Assert.True(result.IsSuccess);
 

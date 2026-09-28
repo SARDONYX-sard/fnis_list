@@ -1,21 +1,35 @@
+using System.Collections.Generic;
+
 namespace fnis_list;
 
-public readonly struct FnisPattern
+/// <summary>
+/// Represents the parsed contents of an FNIS list file.
+/// </summary>
+public sealed class FnisPattern
 {
-    private readonly FnisAnimType _type;
-    private readonly FnisAnimation _animation;
+    private readonly List<FnisAnimation> _animations;
+    private readonly List<FnisAnimVarData> _animVars;
+    private readonly List<FnisAlternateAnimation> _alternateAnimations;
 
-    private FnisPattern(FnisAnimType type, FnisAnimation animation)
+    internal FnisPattern(List<FnisAnimation> animations, List<FnisAnimVarData> animVars, List<FnisAlternateAnimation> alternateAnimations)
     {
-        this._type = type;
-        this._animation = animation;
+        this._animations = animations;
+        this._animVars = animVars;
+        this._alternateAnimations = alternateAnimations;
     }
 
-    internal static FnisPattern FromAnimation(FnisAnimation animation)
-    {
-        return new FnisPattern(animation.Type, animation);
-    }
+    /// <summary>
+    /// Gets the normal animations.
+    /// </summary>
+    public IReadOnlyList<FnisAnimation> Animations => this._animations;
 
-    public FnisAnimType Type => this._type;
-    public FnisAnimation Animation => this._animation;
+    /// <summary>
+    /// Gets the animation variables.
+    /// </summary>
+    public IReadOnlyList<FnisAnimVarData> AnimVars => this._animVars;
+
+    /// <summary>
+    /// Gets the alternate-animation blocks.
+    /// </summary>
+    public IReadOnlyList<FnisAlternateAnimation> AlternateAnimations => this._alternateAnimations;
 }

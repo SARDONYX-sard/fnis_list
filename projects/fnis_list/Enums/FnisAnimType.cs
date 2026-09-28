@@ -11,11 +11,6 @@ namespace fnis_list;
 public enum FnisAnimType
 {
     /// <summary>
-    /// Default/Invalid type
-    /// </summary>
-    Unknown,
-
-    /// <summary>
     /// <c>b</c> – Basic: simple idle animation with one animation file.
     /// </summary>
     Basic,
@@ -66,7 +61,7 @@ public enum FnisAnimType
     KillMove,
 
     /// <summary>
-    /// <c>aa</c> – Alternate Animation.
+    /// <c>AAPrefix, AASet, T</c> – Alternate Animation.
     /// </summary>
     Alternate,
 
