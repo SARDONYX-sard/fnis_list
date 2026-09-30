@@ -6,12 +6,14 @@ namespace fnis_list;
 /// <summary>
 /// Parses an entire FNIS list file.
 /// </summary>
-public ref struct FnisListReader
-{
+public ref struct FnisListReader {
     private readonly ReadOnlySpan<char> _source;
     private int _position;
     private int _versionMajor;
     private int _versionMinor;
+    /// <summary>
+    /// SequencedContinued ('+') must follow s/so/fu/fuo/ch.
+    /// </summary>
     private bool _canContinueSequence;
 
     private bool _chairActive;
@@ -22,8 +24,7 @@ public ref struct FnisListReader
     private bool _furniturePreviousAcyclic;
     private bool _furnitureLastAcyclic;
 
-    public FnisListReader(ReadOnlySpan<char> source)
-    {
+    public FnisListReader(ReadOnlySpan<char> source) {
         this._source = source;
         this._position = 0;
         this._versionMajor = 0;
@@ -42,21 +43,17 @@ public ref struct FnisListReader
     public int VersionMajor => this._versionMajor;
     public int VersionMinor => this._versionMinor;
 
-    public FnisListParseResult<FnisPattern> Parse()
-    {
+    public FnisListParseResult<FnisPattern> Parse() {
         List<FnisAnimation> animations = new();
-        List<FnisAnimVarData> animVars = new();
+        List<FnisAnimVarSpan> animVars = new();
         List<FnisAlternateAnimation> alternateAnimations = new();
 
-        while (true)
-        {
+        while (true) {
             FnisLineParser.SkipWhitespaceAndComments(this._source, ref this._position, this._source.Length);
 
-            if (this._position >= this._source.Length)
-            {
+            if (this._position >= this._source.Length) {
                 FnisListParseErrorKind? error = this.ValidatePendingSequence();
-                if (error is not null)
-                {
+                if (error is not null) {
                     return FnisListParseResult<FnisPattern>.Failure(error.Value, this._position);
                 }
 
@@ -68,10 +65,8 @@ public ref struct FnisListReader
 
             // /////////////////////////////////////////////////////////////////////////////////////////////////////////
             // Format: Version v<D>.<D>
-            if (FnisLineParser.IsVersionLine(lineText))
-            {
-                if (!FnisLineParser.TryParseVersion(lineText, out int major, out int minor))
-                {
+            if (FnisLineParser.IsVersionLine(lineText)) {
+                if (!FnisLineParser.TryParseVersion(lineText, out int major, out int minor)) {
                     return FnisListParseResult<FnisPattern>.Failure(FnisListParseErrorKind.InvalidSyntax, line.Pos);
                 }
 
@@ -84,20 +79,17 @@ public ref struct FnisListReader
 
             // /////////////////////////////////////////////////////////////////////////////////////////////////////////
             // Format: MD <time:f32> <x> <y> <z>
-            if (FnisRotationParser.IsMotionLine(lineText))
-            {
-                if (animations.Count == 0)
-                {
+            if (FnisRotationParser.IsMotionLine(lineText)) {
+                if (animations.Count == 0) {
                     return FnisListParseResult<FnisPattern>.Failure(FnisListParseErrorKind.InvalidSyntax, line.Pos);
                 }
 
-                FnisListParseResult<FnisMotionData> result = FnisRotationParser.ParseMotion(this._source, line);
-                if (result.IsFailure)
-                {
+                FnisListParseResult<FnisMotion> result = FnisRotationParser.ParseMotion(this._source, line);
+                if (result.IsFailure) {
                     return FnisListParseResult<FnisPattern>.Failure(result.Error, result.Pos);
                 }
 
-                animations[^1].AddMotionData(result.Value);// push to prev animation
+                animations[^1].PushMotionData(result.Value); // push to prev animation
                 this._position = FnisLineParser.NextLine(this._source, line.End);
 
                 continue;
@@ -105,19 +97,17 @@ public ref struct FnisListReader
 
             // /////////////////////////////////////////////////////////////////////////////////////////////////////////
             // Format: RD <time:f32> <x> <y> <z>
-            if (FnisRotationParser.IsRotationLine(lineText))
-            {
-                if (animations.Count == 0)
-                {
+            // Format: RD <time:f32> <z>
+            if (FnisRotationParser.IsRotationLine(lineText)) {
+                if (animations.Count == 0) {
                     return FnisListParseResult<FnisPattern>.Failure(FnisListParseErrorKind.InvalidSyntax, line.Pos);
                 }
 
-                FnisListParseResult<FnisRotationData> result = FnisRotationParser.ParseRotation(this._source, line);
-                if (result.IsFailure)
-                {
+                FnisListParseResult<FnisRotation> result = FnisRotationParser.ParseRotation(this._source, line);
+                if (result.IsFailure) {
                     return FnisListParseResult<FnisPattern>.Failure(result.Error, result.Pos);
                 }
-                animations[^1].AddRotationData(result.Value); // push to prev animation
+                animations[^1].PushRotationData(result.Value); // push to prev animation
 
                 this._position = FnisLineParser.NextLine(this._source, line.End);
                 continue;
@@ -126,25 +116,20 @@ public ref struct FnisListReader
             // /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             // Peek FNIS type
-            FnisListParseResult<FnisTypeData> typeResult = FnisTypeParser.Parse(this._source, line);
-            if (typeResult.IsFailure)
-            {
+            FnisListParseResult<FnisTypeSpan> typeResult = FnisTypeParser.Parse(this._source, line);
+            if (typeResult.IsFailure) {
                 return FnisListParseResult<FnisPattern>.Failure(typeResult.Error, typeResult.Pos);
             }
 
-            switch (typeResult.Value.Type)
-            {
-                case FnisAnimType.AnimVar:
-                    {
+            switch (typeResult.Value.Type) {
+                case FnisAnimType.AnimVar: {
                         FnisListParseErrorKind? error = this.ValidatePendingSequence();
-                        if (error is not null)
-                        {
+                        if (error is not null) {
                             return FnisListParseResult<FnisPattern>.Failure(error.Value, this._position);
                         }
 
-                        FnisListParseResult<FnisAnimVarData> result = FnisAnimVarParser.Parse(this._source, line);
-                        if (result.IsFailure)
-                        {
+                        FnisListParseResult<FnisAnimVarSpan> result = FnisAnimVarParser.Parse(this._source, line);
+                        if (result.IsFailure) {
                             return FnisListParseResult<FnisPattern>.Failure(result.Error, result.Pos);
                         }
 
@@ -153,18 +138,15 @@ public ref struct FnisListReader
                         break;
                     }
 
-                case FnisAnimType.Alternate:
-                    {
+                case FnisAnimType.Alternate: {
                         FnisListParseErrorKind? error = this.ValidatePendingSequence();
-                        if (error is not null)
-                        {
+                        if (error is not null) {
                             return FnisListParseResult<FnisPattern>.Failure(error.Value, this._position);
                         }
 
                         FnisListParseResult<FnisAlternateAnimation> result = FnisAAParser.Parse(this._source, ref this._position);
 
-                        if (result.IsFailure)
-                        {
+                        if (result.IsFailure) {
                             return FnisListParseResult<FnisPattern>.Failure(
                                 result.Error,
                                 result.Pos);
@@ -174,31 +156,26 @@ public ref struct FnisListReader
                         break;
                     }
 
-                default:
-                    {
+                default: {
                         FnisListParseResult<FnisAnimation> result = FnisLineParser.Parse(this._source, line);
 
-                        if (result.IsFailure)
-                        {
+                        if (result.IsFailure) {
                             return FnisListParseResult<FnisPattern>.Failure(result.Error, result.Pos);
                         }
 
                         FnisAnimation animation = result.Value;
 
-                        if (animation.Type != FnisAnimType.SequencedContinued)
-                        {
+                        if (animation.Type != FnisAnimType.SequencedContinued) {
                             FnisListParseErrorKind? error = this.ValidatePendingSequence();
 
-                            if (error is not null)
-                            {
+                            if (error is not null) {
                                 return FnisListParseResult<FnisPattern>.Failure(error.Value, this._position);
                             }
                         }
 
                         {
                             FnisListParseErrorKind? error = this.ValidateAnimation(animation);
-                            if (error is not null)
-                            {
+                            if (error is not null) {
                                 return FnisListParseResult<FnisPattern>.Failure(error.Value, line.Pos);
                             }
                         }
@@ -214,10 +191,8 @@ public ref struct FnisListReader
         return FnisListParseResult<FnisPattern>.Success(new FnisPattern(animations, animVars, alternateAnimations), this._position);
     }
 
-    private FnisListParseErrorKind? ValidateAnimation(FnisAnimation animation)
-    {
-        switch (animation.Type)
-        {
+    private FnisListParseErrorKind? ValidateAnimation(FnisAnimation animation) {
+        switch (animation.Type) {
             case FnisAnimType.Chair:
                 return this.StartChair(animation);
 
@@ -231,18 +206,15 @@ public ref struct FnisListReader
                 return null;
 
             case FnisAnimType.SequencedContinued:
-                if (!this._canContinueSequence)
-                {
+                if (!this._canContinueSequence) {
                     return FnisListParseErrorKind.InvalidSequence;
                 }
 
-                if (this._chairActive)
-                {
+                if (this._chairActive) {
                     this._chairContinuationCount++;
                 }
 
-                if (this._furnitureActive)
-                {
+                if (this._furnitureActive) {
                     this._furnitureAnimationCount++;
                     this._furniturePreviousAcyclic = this._furnitureLastAcyclic;
                     this._furnitureLastAcyclic = HasAcyclicFlag(animation);
@@ -257,12 +229,10 @@ public ref struct FnisListReader
         }
     }
 
-    private FnisListParseErrorKind? StartChair(FnisAnimation animation)
-    {
+    private FnisListParseErrorKind? StartChair(FnisAnimation animation) {
         FnisAnimFlags flags = animation.Flags;
 
-        if (flags != FnisAnimFlags.None && flags != FnisAnimFlags.AnimObjects)
-        {
+        if (flags != FnisAnimFlags.None && flags != FnisAnimFlags.AnimObjects) {
             return FnisListParseErrorKind.ChairAllowsOnlyNoFlagsOrAnimationObjects;
         }
 
@@ -273,10 +243,8 @@ public ref struct FnisListReader
         return null;
     }
 
-    private FnisListParseErrorKind? StartFurniture(FnisAnimation animation)
-    {
-        if (!HasAcyclicFlag(animation))
-        {
+    private FnisListParseErrorKind? StartFurniture(FnisAnimation animation) {
+        if (!HasAcyclicFlag(animation)) {
             return FnisListParseErrorKind.FurnitureRequiresAcyclic;
         }
 
@@ -289,12 +257,9 @@ public ref struct FnisListReader
         return null;
     }
 
-    private FnisListParseErrorKind? ValidatePendingSequence()
-    {
-        if (this._chairActive)
-        {
-            if (this._chairContinuationCount < 3)
-            {
+    private FnisListParseErrorKind? ValidatePendingSequence() {
+        if (this._chairActive) {
+            if (this._chairContinuationCount < 3) {
                 return FnisListParseErrorKind.ChairRequiresThreeContinuations;
             }
 
@@ -302,21 +267,17 @@ public ref struct FnisListReader
             this._chairContinuationCount = 0;
         }
 
-        if (this._furnitureActive)
-        {
-            if (this._furnitureAnimationCount < 3)
-            {
+        if (this._furnitureActive) {
+            if (this._furnitureAnimationCount < 3) {
                 return FnisListParseErrorKind.FurnitureRequiresThreeAnimations;
             }
 
-            if (!this._furnitureLastAcyclic)
-            {
+            if (!this._furnitureLastAcyclic) {
                 return FnisListParseErrorKind.FurnitureRequiresAcyclicLastAnimation;
             }
 
             // Intended: second-to-last must be cyclic
-            if (this._furniturePreviousAcyclic == this._furnitureLastAcyclic)
-            {
+            if (this._furniturePreviousAcyclic == this._furnitureLastAcyclic) {
                 return FnisListParseErrorKind.FurnitureSecondToLastMustBeCyclic;
             }
 
@@ -329,13 +290,11 @@ public ref struct FnisListReader
         return null;
     }
 
-    private static bool HasAcyclicFlag(FnisAnimation animation)
-    {
+    private static bool HasAcyclicFlag(FnisAnimation animation) {
         return animation.Flags.HasFlag(FnisAnimFlags.Acyclic);
     }
 
-    private TextSpan GetCurrentLine()
-    {
+    private TextSpan GetCurrentLine() {
         int end = FnisLineParser.FindLineEnd(this._source, this._position);
         return TextSpan.FromRange(this._position, end);
     }

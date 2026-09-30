@@ -2,140 +2,106 @@ using System;
 
 namespace fnis_list;
 
-public readonly struct FnisTypeData
-{
+public readonly struct FnisTypeSpan {
     public FnisAnimType Type { get; }
 
     public int NextPos { get; }
 
-    public FnisTypeData(FnisAnimType type, int nextPos)
-    {
+    public FnisTypeSpan(FnisAnimType type, int nextPos) {
         this.Type = type;
         this.NextPos = nextPos;
     }
 }
 
-public static class FnisTypeParser
-{
-    public static FnisListParseResult<FnisTypeData> Parse(ReadOnlySpan<char> source, TextSpan input)
-    {
+public static class FnisTypeParser {
+    public static FnisListParseResult<FnisTypeSpan> Parse(ReadOnlySpan<char> source, TextSpan input) {
         int position = input.Pos;
         int end = input.End;
 
-        SkipWhitespace(source, ref position, end);
+        FnisTokenParser.SkipWhitespace(source, ref position, end);
 
-        if (position >= end)
-        {
-            return FnisListParseResult<FnisTypeData>.Failure(FnisListParseErrorKind.UnexpectedEnd, position);
+        if (position >= end) {
+            return FnisListParseResult<FnisTypeSpan>.Failure(FnisListParseErrorKind.UnexpectedEnd, position);
         }
 
-        if (TryConsumeToken(source, ref position, end, "AnimVar"))
-        {
+        if (TryMatchTokenIgnoreCase(source, ref position, end, "AnimVar")) {
             return Success(FnisAnimType.AnimVar, position);
         }
 
-        if (TryConsumeToken(source, ref position, end, "AAPrefix"))
-        {
+        if (TryMatchTokenIgnoreCase(source, ref position, end, "AAPrefix")) {
             return Success(FnisAnimType.Alternate, position);
         }
 
-        if (TryConsumeToken(source, ref position, end, "fuo"))
-        {
+        if (TryMatchTokenIgnoreCase(source, ref position, end, "fuo")) {
             return Success(FnisAnimType.FurnitureOptimized, position);
         }
 
-        if (TryConsumeToken(source, ref position, end, "ofa"))
-        {
+        if (TryMatchTokenIgnoreCase(source, ref position, end, "ofa")) {
             return Success(FnisAnimType.OffsetArm, position);
         }
 
 
-        if (TryConsumeToken(source, ref position, end, "ch"))
-        {
+        if (TryMatchTokenIgnoreCase(source, ref position, end, "ch")) {
             return Success(FnisAnimType.Chair, position);
         }
 
-        if (TryConsumeToken(source, ref position, end, "fu"))
-        {
+        if (TryMatchTokenIgnoreCase(source, ref position, end, "fu")) {
             return Success(FnisAnimType.Furniture, position);
         }
 
-        if (TryConsumeToken(source, ref position, end, "km"))
-        {
+        if (TryMatchTokenIgnoreCase(source, ref position, end, "km")) {
             return Success(FnisAnimType.KillMove, position);
         }
 
-        if (TryConsumeToken(source, ref position, end, "pa"))
-        {
+        if (TryMatchTokenIgnoreCase(source, ref position, end, "pa")) {
             return Success(FnisAnimType.Paired, position);
         }
 
-        if (TryConsumeToken(source, ref position, end, "so"))
-        {
+        if (TryMatchTokenIgnoreCase(source, ref position, end, "so")) {
             return Success(FnisAnimType.SequencedOptimized, position);
         }
 
-        if (TryConsumeToken(source, ref position, end, "+"))
-        {
+        if (TryMatchTokenIgnoreCase(source, ref position, end, "+")) {
             return Success(FnisAnimType.SequencedContinued, position);
         }
 
-        if (TryConsumeToken(source, ref position, end, "b"))
-        {
+        if (TryMatchTokenIgnoreCase(source, ref position, end, "b")) {
             return Success(FnisAnimType.Basic, position);
         }
 
-        if (TryConsumeToken(source, ref position, end, "o"))
-        {
+        if (TryMatchTokenIgnoreCase(source, ref position, end, "o")) {
             return Success(FnisAnimType.AnimObject, position);
         }
 
-        if (TryConsumeToken(source, ref position, end, "s"))
-        {
+        if (TryMatchTokenIgnoreCase(source, ref position, end, "s")) {
             return Success(FnisAnimType.Sequenced, position);
         }
 
-        return FnisListParseResult<FnisTypeData>.Failure(FnisListParseErrorKind.InvalidSyntax, position);
+        return FnisListParseResult<FnisTypeSpan>.Failure(FnisListParseErrorKind.InvalidSyntax, position);
     }
 
-    private static FnisListParseResult<FnisTypeData> Success(FnisAnimType type, int nextPos)
-    {
-        return FnisListParseResult<FnisTypeData>.Success(new FnisTypeData(type, nextPos), nextPos);
+    private static FnisListParseResult<FnisTypeSpan> Success(FnisAnimType type, int nextPos) {
+        return FnisListParseResult<FnisTypeSpan>.Success(new FnisTypeSpan(type, nextPos), nextPos);
     }
 
-    /// <remarks>
-    /// NOTE: Case ignored
-    /// </remarks>
-    private static bool TryConsumeToken(ReadOnlySpan<char> source, ref int position, int end, ReadOnlySpan<char> token)
-    {
-        if (position + token.Length > end)
-        {
+    private static bool TryMatchTokenIgnoreCase(ReadOnlySpan<char> source, ref int position, int end, ReadOnlySpan<char> token) {
+        if (position + token.Length > end) {
             return false;
         }
 
         int start = position;
 
-        if (!source.Slice(position, token.Length).Equals(token, StringComparison.OrdinalIgnoreCase))
-        {
+        if (!source.Slice(position, token.Length).Equals(token, StringComparison.OrdinalIgnoreCase)) {
             return false;
         }
 
         position += token.Length;
 
-        if (position < end && !char.IsWhiteSpace(source[position]) && source[position] != ',')
-        {
+        if (position < end && !char.IsWhiteSpace(source[position]) && source[position] != ',') {
             position = start;
             return false;
         }
 
         return true;
-    }
-
-    private static void SkipWhitespace(ReadOnlySpan<char> source, ref int position, int end)
-    {
-        while (position < end && char.IsWhiteSpace(source[position]))
-        {
-            position++;
-        }
     }
 }

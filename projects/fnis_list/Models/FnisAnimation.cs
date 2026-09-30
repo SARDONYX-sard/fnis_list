@@ -1,41 +1,38 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 
 namespace fnis_list;
 
-public readonly struct FnisAnimation
-{
+public readonly struct FnisAnimation {
     private readonly FnisAnimType _type;
     private readonly TextSpan _event;
     private readonly TextSpan _file;
-    private readonly List<FnisAnimObjectData> _objects;
+    private readonly List<FnisAnimObjectSpan> _objects;
 
     private readonly FnisAnimFlags _flags;
     private readonly float? _blendTime;
     private readonly float? _duration;
 
-    private readonly List<FnisTriggerData> _triggers;
-    private readonly List<FnisTriggerData> _triggers2;
+    private readonly List<FnisTriggerSpan> _triggers;
+    private readonly List<FnisTriggerSpan> _triggers2;
 
 
-    private readonly List<FnisMotionData> _motionData;
-    private readonly List<FnisRotationData> _rotationData;
+    private readonly List<FnisMotion> _motionData;
+    private readonly List<FnisRotation> _rotationData;
 
     internal FnisAnimation(
         FnisAnimType type,
         TextSpan @event,
         TextSpan file,
-        List<FnisAnimObjectData> objects,
+        List<FnisAnimObjectSpan> objects,
         FnisAnimFlags flags,
         float? blendTime,
         float? duration,
-        List<FnisTriggerData> triggers,
-        List<FnisTriggerData> triggers2,
-          List<FnisMotionData> motionData,
-        List<FnisRotationData> rotationData)
-    {
+        List<FnisTriggerSpan> triggers,
+        List<FnisTriggerSpan> triggers2,
+          List<FnisMotion> motionData,
+        List<FnisRotation> rotationData) {
         this._type = type;
         this._event = @event;
         this._file = file;
@@ -49,6 +46,14 @@ public readonly struct FnisAnimation
         this._rotationData = rotationData;
     }
 
+    internal void PushMotionData(FnisMotion value) {
+        this._motionData.Add(value);
+    }
+
+    internal void PushRotationData(FnisRotation value) {
+        this._rotationData.Add(value);
+    }
+
     public FnisAnimType Type => this._type;
 
     public FnisAnimFlags Flags => this._flags;
@@ -59,13 +64,11 @@ public readonly struct FnisAnimation
     public bool HasDuration => this._duration.HasValue;
     public float? Duration => this._duration;
 
-    public ReadOnlySpan<char> AnimEvent(ReadOnlySpan<char> source)
-    {
+    public ReadOnlySpan<char> AnimEvent(ReadOnlySpan<char> source) {
         return this._event.Slice(source);
     }
 
-    public ReadOnlySpan<char> AnimFile(ReadOnlySpan<char> source)
-    {
+    public ReadOnlySpan<char> AnimFile(ReadOnlySpan<char> source) {
         return this._file.Slice(source);
     }
 
@@ -77,54 +80,46 @@ public readonly struct FnisAnimation
     public int RotationDataCount => this._rotationData.Count;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetTrigger(ReadOnlySpan<char> source, int index, out FnisTrigger trigger)
-    {
+    public bool TryGetTrigger(ReadOnlySpan<char> source, int index, out FnisTrigger trigger) {
         trigger = default;
-        if ((uint)index >= (uint)this.TriggerCount)
-        {
+        if ((uint)index >= (uint)this.TriggerCount) {
             return false;
         }
 
-        FnisTriggerData data = this._triggers[index];
+        FnisTriggerSpan data = this._triggers[index];
         trigger = new FnisTrigger(data.Event.Slice(source), data.Time);
 
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetTrigger2(ReadOnlySpan<char> source, int index, out FnisTrigger trigger)
-    {
+    public bool TryGetTrigger2(ReadOnlySpan<char> source, int index, out FnisTrigger trigger) {
         trigger = default;
-        if ((uint)index >= (uint)this.Trigger2Count)
-        {
+        if ((uint)index >= (uint)this.Trigger2Count) {
             return false;
         }
 
-        FnisTriggerData data = this._triggers2[index];
+        FnisTriggerSpan data = this._triggers2[index];
         trigger = new FnisTrigger(data.Event.Slice(source), data.Time);
 
         return true;
     }
 
-    public bool TryGetObject(ReadOnlySpan<char> source, int index, out FnisAnimObject value)
-    {
+    public bool TryGetObject(ReadOnlySpan<char> source, int index, out FnisAnimObject value) {
         value = default;
-        if ((uint)index >= (uint)this.ObjectCount)
-        {
+        if ((uint)index >= (uint)this.ObjectCount) {
             return false;
         }
 
-        FnisAnimObjectData data = this._objects[index];
+        FnisAnimObjectSpan data = this._objects[index];
         value = new FnisAnimObject(data.Name.Slice(source), data.Role);
 
         return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetMotionData(int index, out FnisMotionData value)
-    {
-        if ((uint)index >= (uint)this.MotionDataCount)
-        {
+    public bool TryGetMotionData(int index, out FnisMotion value) {
+        if ((uint)index >= (uint)this.MotionDataCount) {
             value = default;
             return false;
         }
@@ -134,10 +129,8 @@ public readonly struct FnisAnimation
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetRotationData(int index, out FnisRotationData value)
-    {
-        if ((uint)index >= (uint)this.RotationDataCount)
-        {
+    public bool TryGetRotationData(int index, out FnisRotation value) {
+        if ((uint)index >= (uint)this.RotationDataCount) {
             value = default;
             return false;
         }
@@ -146,13 +139,16 @@ public readonly struct FnisAnimation
         return true;
     }
 
-    internal void AddMotionData(FnisMotionData value)
-    {
-        this._motionData.Add(value);
-    }
 
-    internal void AddRotationData(FnisRotationData value)
-    {
-        this._rotationData.Add(value);
+    /// <summary>
+    /// Returns whether the animation file should be included in the consistency check.
+    /// </summary>
+    /// <remarks>
+    /// Animations marked with <see cref="FnisAnimFlags.BSA"/> or
+    /// <see cref="FnisAnimFlags.Known"/> are excluded from the consistency check.
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool ShouldCheckAnimFile() {
+        return (this._flags & (FnisAnimFlags.BSA | FnisAnimFlags.Known)) == 0;
     }
 }

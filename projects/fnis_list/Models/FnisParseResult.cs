@@ -2,8 +2,7 @@ using System;
 
 namespace fnis_list;
 
-public readonly struct FnisListParseResult<T>
-{
+public readonly struct FnisListParseResult<T> {
     private readonly bool _success;
     private readonly FnisListParseErrorKind _error;
     private readonly bool _endOfInput;
@@ -23,12 +22,9 @@ public readonly struct FnisListParseResult<T>
 
     public int Pos => this._pos;
 
-    public T Value
-    {
-        get
-        {
-            if (!this._success)
-            {
+    public T Value {
+        get {
+            if (!this._success) {
                 throw new InvalidOperationException("The parse result does not contain a value.");
             }
 
@@ -36,12 +32,9 @@ public readonly struct FnisListParseResult<T>
         }
     }
 
-    public FnisListParseErrorKind Error
-    {
-        get
-        {
-            if (!this.IsFailure)
-            {
+    public FnisListParseErrorKind Error {
+        get {
+            if (!this.IsFailure) {
                 throw new InvalidOperationException("The parse result does not contain an error.");
             }
 
@@ -49,16 +42,14 @@ public readonly struct FnisListParseResult<T>
         }
     }
 
-    private FnisListParseResult(T value, int pos)
-    {
+    private FnisListParseResult(T value, int pos) {
         this._success = true;
         this._value = value;
         this._error = default;
         this._pos = pos;
     }
 
-    private FnisListParseResult(FnisListParseErrorKind error, int pos)
-    {
+    private FnisListParseResult(FnisListParseErrorKind error, int pos) {
         this._success = false;
         this._value = default!;
         this._error = error;
@@ -68,8 +59,7 @@ public readonly struct FnisListParseResult<T>
     /// <summary>
     /// For EndOfInput
     /// </summary>
-    private FnisListParseResult(int pos)
-    {
+    private FnisListParseResult(int pos) {
         this._success = false;
         this._endOfInput = true;
         this._value = default!;
@@ -82,8 +72,7 @@ public readonly struct FnisListParseResult<T>
     public static FnisListParseResult<T> Failure(FnisListParseErrorKind error, int pos) => new(error, pos);
 
     // internal static FnisListParseResult<T> EndOfInput(int pos) => new FnisListParseResult<T>(endOfInput: true, pos);
-    public static FnisListParseResult<T> EndOfInput(int pos)
-    {
+    public static FnisListParseResult<T> EndOfInput(int pos) {
         return new FnisListParseResult<T>(pos);
     }
 
@@ -95,27 +84,23 @@ public readonly struct FnisListParseResult<T>
     ///   ┌─ path:2:1
     ///   │
     /// 2 │ + Second second.hkx
-    ///   │ ^ invalid sequence
+    ///   │ ^ SequencedContinued ('+') must follow s/so/fu/fuo/ch.
     /// </code>
     /// </summary>
-    public string ReadableError(ReadOnlySpan<char> source, string path = "")
-    {
-        if (!this.IsFailure)
-        {
+    public string ReadableError(ReadOnlySpan<char> source, string path = "") {
+        if (!this.IsFailure) {
             throw new InvalidOperationException("The parse result does not contain an error.");
         }
 
         int pos = Math.Clamp(this._pos, 0, source.Length);
 
         int lineStart = pos;
-        while (lineStart > 0 && source[lineStart - 1] != '\r' && source[lineStart - 1] != '\n')
-        {
+        while (lineStart > 0 && source[lineStart - 1] != '\r' && source[lineStart - 1] != '\n') {
             lineStart--;
         }
 
         int lineEnd = pos;
-        while (lineEnd < source.Length && source[lineEnd] != '\r' && source[lineEnd] != '\n')
-        {
+        while (lineEnd < source.Length && source[lineEnd] != '\r' && source[lineEnd] != '\n') {
             lineEnd++;
         }
 
@@ -123,8 +108,7 @@ public readonly struct FnisListParseResult<T>
         int column = pos - lineStart;
 
         int lineNumber = 1;
-        for (int i = 0; i < lineStart; i++)
-        {
+        for (int i = 0; i < lineStart; i++) {
             if (source[i] == '\n') { lineNumber++; }
         }
 
@@ -139,10 +123,8 @@ public readonly struct FnisListParseResult<T>
     /// <summary>
     /// Return EnumErrorKind to readable message.
     /// </summary>
-    public static string ErrorMessage(FnisListParseErrorKind error)
-    {
-        return error switch
-        {
+    public static string ErrorMessage(FnisListParseErrorKind error) {
+        return error switch {
             FnisListParseErrorKind.InvalidSource
                 => "invalid source",
 
@@ -156,13 +138,13 @@ public readonly struct FnisListParseResult<T>
                 => "missing duration",
 
             FnisListParseErrorKind.InvalidSequence
-                => "invalid sequence",
+                => "SequencedContinued ('+') must follow s/so/fu/fuo/ch",
 
             FnisListParseErrorKind.InvalidNumber
                 => "invalid number",
 
             FnisListParseErrorKind.UnexpectedAnimationObject
-                => "Animation object data (remaining input) was provided without the -o flag.",
+                => "Animation object data (remaining input) was provided without the -o flag",
 
             FnisListParseErrorKind.InvalidAnimationObject
                 => "invalid animation object",
@@ -202,8 +184,7 @@ public readonly struct FnisListParseResult<T>
 /// <summary>
 /// Describes the result of parsing.
 /// </summary>
-public enum FnisListParseErrorKind : byte
-{
+public enum FnisListParseErrorKind : byte {
     /// <summary>
     /// The input source or span is invalid.
     /// </summary>
@@ -225,7 +206,7 @@ public enum FnisListParseErrorKind : byte
     MissingDuration,
 
     /// <summary>
-    /// A sequence continuation is invalid.
+    /// SequencedContinued ('+') must follow s/so/fu/fuo/ch.
     /// </summary>
     InvalidSequence,
 

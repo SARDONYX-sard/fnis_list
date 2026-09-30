@@ -8,8 +8,7 @@ namespace fnis_list;
 /// <c>FNIS for Modders_V6.2.pdf</c> (c)Fore
 /// which is part of the FNIS (Fores New Idles in Skyrim) modding documentation.
 /// </remarks>
-public enum FnisAnimType
-{
+public enum FnisAnimType {
     /// <summary>
     /// <c>b</c> – Basic: simple idle animation with one animation file.
     /// </summary>
@@ -88,8 +87,7 @@ public enum FnisAnimType
 /// which is part of the FNIS (Fores New Idles in Skyrim) modding documentation.
 /// </remarks>
 [System.Flags]
-public enum FnisAnimFlags : uint
-{
+public enum FnisAnimFlags : uint {
     /// <summary>
     /// No special options.
     /// </summary>

@@ -1,7 +1,4 @@
-# High Performance FNIS List Parser
-
-A proof-of-concept FNIS list parser using `ReadOnlySpan<char>` to minimize heap allocations.
-Only `triggers` and `animObjects` require heap allocation.
+# Span based High Performance FNIS List Parser
 
 This project is an implementation candidate for integration into Pandora Behavior Engine+.
 
