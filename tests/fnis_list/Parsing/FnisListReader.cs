@@ -1,19 +1,16 @@
 using System;
 using Xunit;
-using Xunit.Sdk;
 
 namespace fnis_list.Tests;
 
-public sealed class FnisListReaderTests
-{
+public sealed class FnisListReaderTests {
     [Theory]
     [InlineData("b Attack attack.hkx", FnisAnimType.Basic)]
     [InlineData("s First first.hkx", FnisAnimType.Sequenced)]
     [InlineData("so SeqStart seq_start.hkx", FnisAnimType.SequencedOptimized)]
     [InlineData("pa HugB paired_hugb.hkx", FnisAnimType.Paired)]
     [InlineData("km KillMove killmove.hkx", FnisAnimType.KillMove)]
-    public void ReadsAnimation(string source, FnisAnimType expectedType)
-    {
+    public void ReadsAnimation(string source, FnisAnimType expectedType) {
         FnisListReader reader = new(source);
 
         FnisListParseResult<FnisPattern> result = reader.Parse();
@@ -24,8 +21,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void ReadsAnimationData()
-    {
+    public void ReadsAnimationData() {
         const string source = """
             b -a,ac,h Attack attack.hkx
             """;
@@ -49,8 +45,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void ReadsSequenceLines()
-    {
+    public void ReadsSequenceLines() {
         const string source = """
             s First first.hkx
             + Second second.hkx
@@ -81,8 +76,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void ReadsOptimizedSequenceLines()
-    {
+    public void ReadsOptimizedSequenceLines() {
         const string source = """
             so First first.hkx
             + Second second.hkx
@@ -103,8 +97,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void ReadsMultipleAnimations()
-    {
+    public void ReadsMultipleAnimations() {
         const string source = """
             b Attack attack.hkx
             s First first.hkx
@@ -138,8 +131,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void ReadsPairedAnimation()
-    {
+    public void ReadsPairedAnimation() {
         const string source = """
             pa -o,D20.0,THit/2.5,T2_Kill/3.25 HugB paired_hugb.hkx Sword/1 Axe/2
             """;
@@ -163,8 +155,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void ReadsKillMoveAnimation()
-    {
+    public void ReadsKillMoveAnimation() {
         const string source = """
             km -ac,h,o,D35.5,TStart/1.0,TEnd/20.0 KillMove killmove.hkx Weapon/1 Victim/2
             """;
@@ -172,8 +163,7 @@ public sealed class FnisListReaderTests
         FnisListReader reader = new(source);
 
         FnisListParseResult<FnisPattern> result = reader.Parse();
-        if (result.IsFailure)
-        {
+        if (result.IsFailure) {
             Assert.Fail(result.ReadableError(source.AsSpan()));
         }
 
@@ -193,8 +183,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void ReadsChairLines()
-    {
+    public void ReadsChairLines() {
         const string source = """
             ch -o PlayFluteSitting PlayFluteSittingStart.hkx AnimObjectFlute
             + PlayFluteSitting_2 PlayFluteSittingIdlebase.hkx
@@ -242,8 +231,7 @@ public sealed class FnisListReaderTests
     [Theory]
     [InlineData("ch -a PlayFluteSitting PlayFluteSittingStart.hkx")]
     [InlineData("ch -a,o PlayFluteSitting PlayFluteSittingStart.hkx AnimObjectFlute")]
-    public void RejectsInvalidChairStartFlags(string source)
-    {
+    public void RejectsInvalidChairStartFlags(string source) {
         FnisListReader reader = new(source);
 
         FnisListParseResult<FnisPattern> result = reader.Parse();
@@ -253,8 +241,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void ReadsFurnitureLines()
-    {
+    public void ReadsFurnitureLines() {
         const string source = """
             fu -a Kneel_Enter Kneel_Enter.hkx
             + -o,B1.2 Kneel_Loop1 Kneel_Loop1.hkx myAnimObject1 myAnimObject2
@@ -299,8 +286,7 @@ public sealed class FnisListReaderTests
     [Theory]
     [InlineData("fu Kneel_Enter Kneel_Enter.hkx", FnisListParseErrorKind.FurnitureRequiresAcyclic)]
     [InlineData("fu -a Kneel_Enter Kneel_Enter.hkx", FnisListParseErrorKind.FurnitureRequiresThreeAnimations)]
-    public void RejectsInvalidFurnitureStart(string source, FnisListParseErrorKind errKind)
-    {
+    public void RejectsInvalidFurnitureStart(string source, FnisListParseErrorKind errKind) {
         FnisListReader reader = new(source);
 
         FnisListParseResult<FnisPattern> result = reader.Parse();
@@ -310,8 +296,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void ReadsAnimVars()
-    {
+    public void ReadsAnimVars() {
         const string source = """
             AnimVar SomeBool BOOL 1
             AnimVar SomeInt INT32 42
@@ -325,25 +310,24 @@ public sealed class FnisListReaderTests
         Assert.True(result.IsSuccess);
         Assert.Equal(3, result.Value.AnimVars.Count);
 
-        FnisAnimVarData boolVar = result.Value.AnimVars[0];
+        FnisAnimVarSpan boolVar = result.Value.AnimVars[0];
         Assert.Equal("SomeBool", boolVar.Name.Slice(source));
         Assert.Equal(FnisAnimVarValueKind.Bool, boolVar.Value.Kind);
         Assert.True(boolVar.Value.Bool);
 
-        FnisAnimVarData intVar = result.Value.AnimVars[1];
+        FnisAnimVarSpan intVar = result.Value.AnimVars[1];
         Assert.Equal("SomeInt", intVar.Name.Slice(source));
         Assert.Equal(FnisAnimVarValueKind.Int32, intVar.Value.Kind);
         Assert.Equal(42, intVar.Value.Int32);
 
-        FnisAnimVarData realVar = result.Value.AnimVars[2];
+        FnisAnimVarSpan realVar = result.Value.AnimVars[2];
         Assert.Equal("SomeReal", realVar.Name.Slice(source));
         Assert.Equal(FnisAnimVarValueKind.Real, realVar.Value.Kind);
         Assert.Equal(1.25f, realVar.Value.Real);
     }
 
     [Fact]
-    public void ReadsAlternateAnimation()
-    {
+    public void ReadsAlternateAnimation() {
         const string source = """
             AAprefix MyPrefix
             AAset GroupA 2
@@ -386,8 +370,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void ReadsMultipleAlternateAnimations()
-    {
+    public void ReadsMultipleAlternateAnimations() {
         const string source = """
             AAprefix First
             AAset GroupA 2
@@ -422,8 +405,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void SkipsVersion()
-    {
+    public void SkipsVersion() {
         const string source = """
             Version V7.2
                 'comment
@@ -446,8 +428,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void SkipsCommentsAndBlankLines()
-    {
+    public void SkipsCommentsAndBlankLines() {
         const string source = """
             ' comment
 
@@ -467,8 +448,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void SkipsCommentsBetweenAnimations()
-    {
+    public void SkipsCommentsBetweenAnimations() {
         const string source = """
             b Attack attack.hkx
             ' comment
@@ -491,8 +471,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void AllowsCommentsAndBlankLinesInsideSequence()
-    {
+    public void AllowsCommentsAndBlankLinesInsideSequence() {
         const string source = """
             s First first.hkx
 
@@ -523,8 +502,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void RejectsContinuationWithoutSequence()
-    {
+    public void RejectsContinuationWithoutSequence() {
         const string source = """
             + Second second.hkx
             """;
@@ -552,8 +530,7 @@ public sealed class FnisListReaderTests
         km KillMove killmove.hkx
         + Second second.hkx
         """)]
-    public void RejectsContinuationAfterNonSequence(string source)
-    {
+    public void RejectsContinuationAfterNonSequence(string source) {
         FnisListReader reader = new(source);
 
         FnisListParseResult<FnisPattern> result = reader.Parse();
@@ -569,8 +546,7 @@ public sealed class FnisListReaderTests
     [InlineData("invalid Attack attack.hkx", FnisListParseErrorKind.InvalidSyntax)]
     public void RejectsInvalidLine(
         string source,
-        FnisListParseErrorKind expectedError)
-    {
+        FnisListParseErrorKind expectedError) {
         FnisListReader reader = new(source);
 
         FnisListParseResult<FnisPattern> result = reader.Parse();
@@ -580,8 +556,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void ReturnsUnexpectedEndForIncompleteAnimation()
-    {
+    public void ReturnsUnexpectedEndForIncompleteAnimation() {
         const string source = """
             b Attack
             """;
@@ -597,8 +572,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void ParsesEmptyInput()
-    {
+    public void ParsesEmptyInput() {
         FnisListReader reader = new("");
 
         FnisListParseResult<FnisPattern> result = reader.Parse();
@@ -610,8 +584,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void HandlesCrLf()
-    {
+    public void HandlesCrLf() {
         const string source =
             "b Attack attack.hkx\r\nb Other other.hkx\r\n";
 
@@ -626,8 +599,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void HandlesCr()
-    {
+    public void HandlesCr() {
         const string source = "b Attack attack.hkx\rb Other other.hkx";
 
         FnisListReader reader = new(source);
@@ -641,8 +613,7 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void HandlesLf()
-    {
+    public void HandlesLf() {
         const string source = "b Attack attack.hkx\nb Other other.hkx";
 
         FnisListReader reader = new(source);
@@ -656,43 +627,35 @@ public sealed class FnisListReaderTests
     }
 
     [Fact]
-    public void ReadableErrorShowsLocationAndSourceLine()
-    {
+    public void ReadableErrorShowsLocationAndSourceLine() {
         const string source = """
             b Attack attack.hkx
             + Second second.hkx
             """;
 
-        FnisListReader reader = new(source);
-
-        FnisListParseResult<FnisPattern> result = reader.Parse();
-
+        FnisListParseResult<FnisPattern> result = new FnisListReader(source).Parse();
         Assert.True(result.IsFailure);
 
-        static string GetCallerFilePath([System.Runtime.CompilerServices.CallerFilePath] string path = "")
-        {
+        static string GetCallerFilePath([System.Runtime.CompilerServices.CallerFilePath] string path = "") {
             return path;
         }
 
-        Assert.Equal(
-            NormalizeLineEndings(
+        Assert.Equal(NormalizeLineEndings(
                 $"""
                   ┌─ {GetCallerFilePath()}:2:1
                   │
                  2 │ + Second second.hkx
-                  │ ^ invalid sequence
+                  │ ^ {FnisListParseResult<FnisPattern>.ErrorMessage(FnisListParseErrorKind.InvalidSequence)}
                 """),
             result.ReadableError(source, GetCallerFilePath()));
     }
 
-    private static string NormalizeLineEndings(string value)
-    {
+    private static string NormalizeLineEndings(string value) {
         return value.Replace("\r\n", "\n");
     }
 
     [Fact]
-    public void ReadsMotionAndRotationData()
-    {
+    public void ReadsMotionAndRotationData() {
         const string source = """
         b Attack attack.hkx
         MD 1.25 10 20 30
@@ -711,20 +674,19 @@ public sealed class FnisListReaderTests
         Assert.Equal(1, animation.MotionDataCount);
         Assert.Equal(1, animation.RotationDataCount);
 
-        Assert.True(animation.TryGetMotionData(0, out FnisMotionData motion));
+        Assert.True(animation.TryGetMotionData(0, out FnisMotion motion));
         Assert.Equal(1.25f, motion.Time);
         Assert.Equal(10.0f, motion.DeltaX);
         Assert.Equal(20.0f, motion.DeltaY);
         Assert.Equal(30.0f, motion.DeltaZ);
 
-        Assert.True(animation.TryGetRotationData(0, out FnisRotationData rotation));
-        Assert.Equal(FnisRotationDataKind.DeltaZAngle, rotation.Kind);
+        Assert.True(animation.TryGetRotationData(0, out FnisRotation rotation));
+        Assert.Equal(FnisRotationKind.DeltaZAngle, rotation.Kind);
         Assert.Equal(45.0f, rotation.ZAngle);
     }
 
     [Fact]
-    public void ReadsMultipleMotionAndRotationData()
-    {
+    public void ReadsMultipleMotionAndRotationData() {
         const string source = """
         b Attack attack.hkx
         RD 0.5 30
@@ -744,32 +706,31 @@ public sealed class FnisListReaderTests
         Assert.Equal(2, animation.MotionDataCount);
         Assert.Equal(2, animation.RotationDataCount);
 
-        Assert.True(animation.TryGetMotionData(0, out FnisMotionData firstMotion));
+        Assert.True(animation.TryGetMotionData(0, out FnisMotion firstMotion));
         Assert.Equal(1.25f, firstMotion.Time);
         Assert.Equal(10.0f, firstMotion.DeltaX);
         Assert.Equal(20.0f, firstMotion.DeltaY);
         Assert.Equal(30.0f, firstMotion.DeltaZ);
 
-        Assert.True(animation.TryGetMotionData(1, out FnisMotionData secondMotion));
+        Assert.True(animation.TryGetMotionData(1, out FnisMotion secondMotion));
         Assert.Equal(2.0f, secondMotion.Time);
         Assert.Equal(-10.0f, secondMotion.DeltaX);
         Assert.Equal(0.0f, secondMotion.DeltaY);
         Assert.Equal(40.0f, secondMotion.DeltaZ);
 
-        Assert.True(animation.TryGetRotationData(0, out FnisRotationData firstRotation));
+        Assert.True(animation.TryGetRotationData(0, out FnisRotation firstRotation));
         Assert.Equal(0.5f, firstRotation.Time);
-        Assert.Equal(FnisRotationDataKind.DeltaZAngle, firstRotation.Kind);
+        Assert.Equal(FnisRotationKind.DeltaZAngle, firstRotation.Kind);
         Assert.Equal(30.0f, firstRotation.ZAngle);
 
-        Assert.True(animation.TryGetRotationData(1, out FnisRotationData secondRotation));
+        Assert.True(animation.TryGetRotationData(1, out FnisRotation secondRotation));
         Assert.Equal(2.0f, secondRotation.Time);
-        Assert.Equal(FnisRotationDataKind.DeltaZAngle, secondRotation.Kind);
+        Assert.Equal(FnisRotationKind.DeltaZAngle, secondRotation.Kind);
         Assert.Equal(-60.0f, secondRotation.ZAngle);
     }
 
     [Fact]
-    public void AssociatesMotionAndRotationDataWithPreviousAnimation()
-    {
+    public void AssociatesMotionAndRotationDataWithPreviousAnimation() {
         const string source = """
         b First first.hkx
         MD 0.5 1 2 3
@@ -791,10 +752,10 @@ public sealed class FnisListReaderTests
         Assert.Equal(1, first.MotionDataCount);
         Assert.Equal(1, first.RotationDataCount);
 
-        Assert.True(first.TryGetMotionData(0, out FnisMotionData firstMotion));
+        Assert.True(first.TryGetMotionData(0, out FnisMotion firstMotion));
         Assert.Equal(0.5f, firstMotion.Time);
 
-        Assert.True(first.TryGetRotationData(0, out FnisRotationData firstRotation));
+        Assert.True(first.TryGetRotationData(0, out FnisRotation firstRotation));
         Assert.Equal(15.0f, firstRotation.ZAngle);
 
         FnisAnimation second = result.Value.Animations[1];
@@ -802,16 +763,15 @@ public sealed class FnisListReaderTests
         Assert.Equal(1, second.MotionDataCount);
         Assert.Equal(1, second.RotationDataCount);
 
-        Assert.True(second.TryGetMotionData(0, out FnisMotionData secondMotion));
+        Assert.True(second.TryGetMotionData(0, out FnisMotion secondMotion));
         Assert.Equal(1.25f, secondMotion.Time);
 
-        Assert.True(second.TryGetRotationData(0, out FnisRotationData secondRotation));
+        Assert.True(second.TryGetRotationData(0, out FnisRotation secondRotation));
         Assert.Equal(-30.0f, secondRotation.ZAngle);
     }
 
     [Fact]
-    public void ExampleTest()
-    {
+    public void ExampleTest() {
         // string source = File.ReadAllText("FNIS_List.txt");
         string source = """
     Version 7.0
@@ -841,8 +801,7 @@ public sealed class FnisListReaderTests
 
         Assert.Equal(expectedEvents.Length, pattern.Animations.Count);
 
-        for (int i = 0; i < pattern.Animations.Count; i++)
-        {
+        for (int i = 0; i < pattern.Animations.Count; i++) {
             FnisAnimation animation = pattern.Animations[i];
 
             Assert.Equal(FnisAnimType.Basic, animation.Type);
@@ -851,7 +810,7 @@ public sealed class FnisListReaderTests
 
 
             Assert.Equal(1, animation.MotionDataCount);
-            Assert.True(animation.TryGetMotionData(0, out FnisMotionData motion));
+            Assert.True(animation.TryGetMotionData(0, out FnisMotion motion));
             Assert.Equal(expectedMotionData[i][0], motion.Time);
             Assert.Equal(expectedMotionData[i][1], motion.DeltaX);
             Assert.Equal(expectedMotionData[i][2], motion.DeltaY);
@@ -859,8 +818,8 @@ public sealed class FnisListReaderTests
 
             Assert.Equal(1, animation.RotationDataCount);
 
-            Assert.True(animation.TryGetRotationData(0, out FnisRotationData rotation));
-            Assert.Equal(FnisRotationDataKind.DeltaZAngle, rotation.Kind);
+            Assert.True(animation.TryGetRotationData(0, out FnisRotation rotation));
+            Assert.Equal(FnisRotationKind.DeltaZAngle, rotation.Kind);
             Assert.Equal(expectedRotationAngles[i], rotation.ZAngle);
         }
     }

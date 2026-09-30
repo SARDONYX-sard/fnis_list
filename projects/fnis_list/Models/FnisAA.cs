@@ -1,18 +1,20 @@
+// Maintainer note:
+// Do not add mutating methods for sets or triggers.
+// This preserves the safety invariant required by CollectionsMarshal.AsSpan.
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace fnis_list;
 
 /// <summary>
 /// Represents an alternative animation set declared by an <c>AAset</c> line.
 /// </summary>
-public readonly struct FnisAASet
-{
+public readonly struct FnisAASetSpan {
     private readonly TextSpan _group;
     private readonly ulong _slots;
 
-    internal FnisAASet(TextSpan group, ulong slots)
-    {
+    internal FnisAASetSpan(TextSpan group, ulong slots) {
         this._group = group;
         this._slots = slots;
     }
@@ -31,13 +33,11 @@ public readonly struct FnisAASet
 /// <summary>
 /// Represents an alternative animation and its trigger definitions declared by a <c>T</c> line.
 /// </summary>
-public readonly struct FnisAnimTrigger
-{
+public readonly struct FnisAnimTriggerSpan {
     private readonly TextSpan _animName;
-    private readonly List<FnisTriggerData> _triggers;
+    private readonly List<FnisTriggerSpan> _triggers;
 
-    internal FnisAnimTrigger(TextSpan animName, List<FnisTriggerData> triggers)
-    {
+    internal FnisAnimTriggerSpan(TextSpan animName, List<FnisTriggerSpan> triggers) {
         this._animName = animName;
         this._triggers = triggers;
     }
@@ -50,20 +50,18 @@ public readonly struct FnisAnimTrigger
     /// <summary>
     /// Gets the trigger definitions associated with the animation.
     /// </summary>
-    public List<FnisTriggerData> Triggers => this._triggers;
+    public List<FnisTriggerSpan> Triggers => this._triggers;
 }
 
 /// <summary>
 /// Represents an FNIS alternate-animation block beginning with an <c>AAprefix</c> line.
 /// </summary>
-public sealed class FnisAlternateAnimation
-{
+public sealed class FnisAlternateAnimation {
     private readonly TextSpan _prefix;
-    private readonly List<FnisAASet> _sets;
-    private readonly List<FnisAnimTrigger> _triggers;
+    private readonly List<FnisAASetSpan> _sets;
+    private readonly List<FnisAnimTriggerSpan> _triggers;
 
-    internal FnisAlternateAnimation(TextSpan prefix, List<FnisAASet> sets, List<FnisAnimTrigger> triggers)
-    {
+    internal FnisAlternateAnimation(TextSpan prefix, List<FnisAASetSpan> sets, List<FnisAnimTriggerSpan> triggers) {
         this._prefix = prefix;
         this._sets = sets;
         this._triggers = triggers;
@@ -77,10 +75,10 @@ public sealed class FnisAlternateAnimation
     /// <summary>
     /// Gets the animation sets declared by this alternate-animation block.
     /// </summary>
-    public ReadOnlySpan<FnisAASet> Sets => this._sets.ToArray(); // FIXME: Not Copy
+    public ReadOnlySpan<FnisAASetSpan> Sets => CollectionsMarshal.AsSpan(this._sets); // Safety: _sets is immutable after construction.
 
     /// <summary>
     /// Gets the animations and their triggers declared by this alternate-animation block.
     /// </summary>
-    public ReadOnlySpan<FnisAnimTrigger> Triggers => this._triggers.ToArray(); // FIXME: Not Copy
+    public ReadOnlySpan<FnisAnimTriggerSpan> Triggers => CollectionsMarshal.AsSpan(this._triggers); // Safety: _triggers is immutable after construction.
 }

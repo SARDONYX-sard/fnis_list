@@ -1,130 +1,82 @@
 using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace fnis_list;
 
 /// <summary>
 /// Parses FNIS motion and rotation data.
 /// </summary>
-public static class FnisRotationParser
-{
-    public static bool IsMotionLine(ReadOnlySpan<char> line)
-    {
-        return line.Length >= 2 &&
-               line[0] is 'M' or 'm' &&
-               line[1] is 'D' or 'd' &&
-               (line.Length == 2 || char.IsWhiteSpace(line[2]));
+public static class FnisRotationParser {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsMotionLine(ReadOnlySpan<char> line) {
+        return line.Length >= 2 && line[0] is 'M' or 'm' && line[1] is 'D' or 'd' && (line.Length == 2 || char.IsWhiteSpace(line[2]));
     }
 
-    public static bool IsRotationLine(ReadOnlySpan<char> line)
-    {
-        return line.Length >= 2 &&
-               line[0] is 'R' or 'r' &&
-               line[1] is 'D' or 'd' &&
-               (line.Length == 2 || char.IsWhiteSpace(line[2]));
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsRotationLine(ReadOnlySpan<char> line) {
+        return line.Length >= 2 && line[0] is 'R' or 'r' && line[1] is 'D' or 'd' && (line.Length == 2 || char.IsWhiteSpace(line[2]));
     }
 
     /// <summary>
     /// Parses an FNIS <c>MD</c> definition.
     /// </summary>
-    public static FnisListParseResult<FnisMotionData> ParseMotion(
-        ReadOnlySpan<char> source,
-        TextSpan line)
-    {
+    public static FnisListParseResult<FnisMotion> ParseMotion(ReadOnlySpan<char> source, TextSpan line) {
         ReadOnlySpan<char> text = line.Slice(source);
         int position = 0;
 
-        if (!TryConsumeToken(text, ref position, "MD"))
-        {
-            return Failure<FnisMotionData>(line.Pos + position);
+        if (!TryMatchTokenIgnoreCase(text, ref position, "MD")) {
+            return Failure<FnisMotion>(line.Pos + position);
         }
 
         if (!TryReadFloat(text, ref position, out float time) ||
             !TryReadFloat(text, ref position, out float deltaX) ||
             !TryReadFloat(text, ref position, out float deltaY) ||
-            !TryReadFloat(text, ref position, out float deltaZ))
-        {
-            return Failure<FnisMotionData>(line.Pos + position);
+            !TryReadFloat(text, ref position, out float deltaZ)) {
+            return Failure<FnisMotion>(line.Pos + position);
         }
 
         SkipWhitespace(text, ref position);
 
-        if (position != text.Length)
-        {
-            return Failure<FnisMotionData>(line.Pos + position);
+        if (position != text.Length) {
+            return Failure<FnisMotion>(line.Pos + position);
         }
 
-        return FnisListParseResult<FnisMotionData>.Success(
-            new FnisMotionData(
-                time,
-                deltaX,
-                deltaY,
-                deltaZ),
-            line.End);
+        return FnisListParseResult<FnisMotion>.Success(new FnisMotion(time, deltaX, deltaY, deltaZ), line.End);
     }
 
     /// <summary>
     /// Parses an FNIS <c>RD</c> definition.
     /// </summary>
-    /// <remarks>
-    /// The quaternion format is attempted first. If it fails,
-    /// the parser falls back to the Z-axis angle format.
-    /// </remarks>
-    /// <param name="source">The complete source text.</param>
-    /// <param name="line">The source span containing the RD definition.</param>
-    /// <returns>The parsed rotation data or a syntax error.</returns>
-    public static FnisListParseResult<FnisRotationData> ParseRotation(
-        ReadOnlySpan<char> source,
-        TextSpan line)
-    {
-        ReadOnlySpan<char> text = line.Slice(source);
-        int position = 0;
+    public static FnisListParseResult<FnisRotation> ParseRotation(ReadOnlySpan<char> source, TextSpan line) {
+        ReadOnlySpan<char> text = line.Slice(source); int position = 0;
 
-        if (!TryConsumeToken(text, ref position, "RD"))
-        {
-            return Failure<FnisRotationData>(line.Pos + position);
+        if (!TryMatchTokenIgnoreCase(text, ref position, "RD")) {
+            return Failure<FnisRotation>(line.Pos + position);
         }
 
-        if (!TryReadFloat(text, ref position, out float time))
-        {
-            return Failure<FnisRotationData>(line.Pos + position);
+        if (!TryReadFloat(text, ref position, out float time)) {
+            return Failure<FnisRotation>(line.Pos + position);
         }
 
         int dataStart = position;
 
-        if (TryParseQuaternion(
-                text,
-                ref position,
-                time,
-                out FnisRotationData quaternion))
-        {
-            return FnisListParseResult<FnisRotationData>.Success(
-                quaternion,
-                line.End);
+        // The quaternion format is attempted first. If it fails,
+        // the parser falls back to the Z-axis angle format.
+        if (TryParseQuaternion(text, ref position, time, out FnisRotation quaternion)) {
+            return FnisListParseResult<FnisRotation>.Success(quaternion, line.End);
         }
 
         position = dataStart;
 
-        if (TryParseZAngle(
-                text,
-                ref position,
-                time,
-                out FnisRotationData zAngle))
-        {
-            return FnisListParseResult<FnisRotationData>.Success(
-                zAngle,
-                line.End);
+        if (TryParseZAngle(text, ref position, time, out FnisRotation zAngle)) {
+            return FnisListParseResult<FnisRotation>.Success(zAngle, line.End);
         }
 
-        return Failure<FnisRotationData>(line.Pos + dataStart);
+        return Failure<FnisRotation>(line.Pos + dataStart);
     }
 
-    private static bool TryParseQuaternion(
-        ReadOnlySpan<char> source,
-        ref int position,
-        float time,
-        out FnisRotationData rotation)
-    {
+    private static bool TryParseQuaternion(ReadOnlySpan<char> source, ref int position, float time, out FnisRotation rotation) {
         rotation = default;
 
         int start = position;
@@ -132,135 +84,87 @@ public static class FnisRotationParser
         if (!TryReadFloat(source, ref position, out float x) ||
             !TryReadFloat(source, ref position, out float y) ||
             !TryReadFloat(source, ref position, out float z) ||
-            !TryReadFloat(source, ref position, out float w))
-        {
+            !TryReadFloat(source, ref position, out float w)) {
             position = start;
             return false;
         }
 
         SkipWhitespace(source, ref position);
 
-        if (position != source.Length)
-        {
+        if (position != source.Length) {
             position = start;
             return false;
         }
 
-        rotation = new FnisRotationData(
-            time,
-            FnisRotationDataKind.Quaternion,
-            x,
-            y,
-            z,
-            w);
+        rotation = new FnisRotation(time, FnisRotationKind.Quaternion, x, y, z, w);
 
         return true;
     }
 
-    private static bool TryParseZAngle(
-        ReadOnlySpan<char> source,
-        ref int position,
-        float time,
-        out FnisRotationData rotation)
-    {
+    private static bool TryParseZAngle(ReadOnlySpan<char> source, ref int position, float time, out FnisRotation rotation) {
         rotation = default;
 
-        if (!TryReadFloat(source, ref position, out float angle))
-        {
+        if (!TryReadFloat(source, ref position, out float angle)) {
             return false;
         }
 
         SkipWhitespace(source, ref position);
 
-        if (position != source.Length)
-        {
+        if (position != source.Length) {
             return false;
         }
 
-        rotation = new FnisRotationData(
-            time,
-            FnisRotationDataKind.DeltaZAngle,
-            default,
-            default,
-            angle,
-            default);
+        rotation = new FnisRotation(time, FnisRotationKind.DeltaZAngle, default, default, angle, default);
 
         return true;
     }
 
-    private static bool TryConsumeToken(
-        ReadOnlySpan<char> source,
-        ref int position,
-        ReadOnlySpan<char> token)
-    {
+    private static bool TryMatchTokenIgnoreCase(ReadOnlySpan<char> source, ref int position, ReadOnlySpan<char> token) {
         SkipWhitespace(source, ref position);
 
-        if (position + token.Length > source.Length)
-        {
+        if (position + token.Length > source.Length) {
             return false;
         }
 
-        if (!source.Slice(position, token.Length).Equals(
-                token,
-                StringComparison.OrdinalIgnoreCase))
-        {
+        if (!source.Slice(position, token.Length).Equals(token, StringComparison.OrdinalIgnoreCase)) {
             return false;
         }
 
         position += token.Length;
 
-        if (position < source.Length &&
-            !char.IsWhiteSpace(source[position]))
-        {
+        if (position < source.Length && !char.IsWhiteSpace(source[position])) {
             return false;
         }
 
         return true;
     }
 
-    private static bool TryReadFloat(
-        ReadOnlySpan<char> source,
-        ref int position,
-        out float value)
-    {
+    private static bool TryReadFloat(ReadOnlySpan<char> source, ref int position, out float value) {
         SkipWhitespace(source, ref position);
 
         int start = position;
 
-        while (position < source.Length &&
-               !char.IsWhiteSpace(source[position]))
-        {
+        while (position < source.Length && !char.IsWhiteSpace(source[position])) {
             position++;
         }
 
-        if (start == position)
-        {
+        if (start == position) {
             value = default;
             return false;
         }
 
-        return float.TryParse(
-            source.Slice(start, position - start),
-            NumberStyles.Float,
-            CultureInfo.InvariantCulture,
-            out value);
+        return float.TryParse(source.Slice(start, position - start), NumberStyles.Float, CultureInfo.InvariantCulture, out value);
     }
 
-    private static void SkipWhitespace(
-        ReadOnlySpan<char> source,
-        ref int position)
-    {
-        while (position < source.Length &&
-               char.IsWhiteSpace(source[position]))
-        {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void SkipWhitespace(ReadOnlySpan<char> source, ref int position) {
+        while (position < source.Length && char.IsWhiteSpace(source[position])) {
             position++;
         }
     }
 
-    private static FnisListParseResult<T> Failure<T>(int position)
-    {
-        return FnisListParseResult<T>.Failure(
-            FnisListParseErrorKind.InvalidSyntax,
-            position);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static FnisListParseResult<T> Failure<T>(int position) {
+        return FnisListParseResult<T>.Failure(FnisListParseErrorKind.InvalidSyntax, position);
     }
 }

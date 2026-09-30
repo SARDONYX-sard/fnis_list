@@ -4,70 +4,59 @@ using System.Globalization;
 
 namespace fnis_list;
 
-public static class FnisLineParser
-{
-    public static FnisListParseResult<FnisAnimation> Parse(ReadOnlySpan<char> source, TextSpan line)
-    {
+public static class FnisLineParser {
+    public static FnisListParseResult<FnisAnimation> Parse(ReadOnlySpan<char> source, TextSpan line) {
         // FORMAT: <type> [flags] <event> <file> [anim_objects]
 
         // -------------------------------------------------------------------------------------------------------------
         // <type>
-        FnisListParseResult<FnisTypeData> typeResult = FnisTypeParser.Parse(source, line);
-        if (typeResult.IsFailure)
-        {
+        FnisListParseResult<FnisTypeSpan> typeResult = FnisTypeParser.Parse(source, line);
+        if (typeResult.IsFailure) {
             return FnisListParseResult<FnisAnimation>.Failure(typeResult.Error, typeResult.Pos);
         }
-        FnisTypeData type = typeResult.Value;
+        FnisTypeSpan type = typeResult.Value;
 
         // -------------------------------------------------------------------------------------------------------------
         // [ flags ]
-        FnisListParseResult<FnisFlagData> flagResult = FnisFlagParser.ParseLine(source, TextSpan.FromRange(type.NextPos, line.End));
-        if (flagResult.IsFailure)
-        {
+        FnisListParseResult<FnisFlagSpan> flagResult = FnisFlagParser.Parse(source, TextSpan.FromRange(type.NextPos, line.End));
+        if (flagResult.IsFailure) {
             return FnisListParseResult<FnisAnimation>.Failure(flagResult.Error, flagResult.Pos);
         }
-        FnisFlagData flags = flagResult.Value;
+        FnisFlagSpan flags = flagResult.Value;
 
         // -------------------------------------------------------------------------------------------------------------
         // <event>
-        FnisListParseResult<FnisTokenData> eventResult = FnisTokenParser.Parse(source, TextSpan.FromRange(flags.NextPos, line.End));
-        if (eventResult.IsFailure)
-        {
+        FnisListParseResult<FnisTokenSpan> eventResult = FnisTokenParser.Parse(source, TextSpan.FromRange(flags.NextPos, line.End));
+        if (eventResult.IsFailure) {
             return FnisListParseResult<FnisAnimation>.Failure(eventResult.Error, eventResult.Pos);
         }
-        FnisTokenData eventData = eventResult.Value;
+        FnisTokenSpan eventData = eventResult.Value;
 
         // -------------------------------------------------------------------------------------------------------------
         // <file>
-        FnisListParseResult<FnisTokenData> fileResult = FnisTokenParser.Parse(source, TextSpan.FromRange(eventData.NextPos, line.End));
-        if (fileResult.IsFailure)
-        {
+        FnisListParseResult<FnisTokenSpan> fileResult = FnisTokenParser.Parse(source, TextSpan.FromRange(eventData.NextPos, line.End));
+        if (fileResult.IsFailure) {
             return FnisListParseResult<FnisAnimation>.Failure(fileResult.Error, fileResult.Pos);
         }
-        FnisTokenData fileData = fileResult.Value;
+        FnisTokenSpan fileData = fileResult.Value;
 
         // -------------------------------------------------------------------------------------------------------------
         // [anim object]
-        List<FnisAnimObjectData> objects;
-        if (flags.Flags.HasFlag(FnisAnimFlags.AnimObjects))
-        {
+        List<FnisAnimObjectSpan> objects;
+        if (flags.Flags.HasFlag(FnisAnimFlags.AnimObjects)) {
             bool isPairAndKill = type.Type is FnisAnimType.Paired or FnisAnimType.KillMove;
-            FnisListParseResult<List<FnisAnimObjectData>> objectResult =
+            FnisListParseResult<List<FnisAnimObjectSpan>> objectResult =
                 FnisAnimObjectParser.Parse(source, TextSpan.FromRange(fileData.NextPos, line.End), isPairAndKill);
-            if (objectResult.IsFailure)
-            {
+            if (objectResult.IsFailure) {
                 return FnisListParseResult<FnisAnimation>.Failure(objectResult.Error, objectResult.Pos);
             }
             objects = objectResult.Value;
         }
-        else
-        {
-
+        else {
             int position = fileData.NextPos;
             SkipWhitespaceAndComments(source, ref position, line.End);
 
-            if (position < line.End)
-            {
+            if (position < line.End) {
                 return FnisListParseResult<FnisAnimation>.Failure(FnisListParseErrorKind.UnexpectedAnimationObject, position);
             }
             objects = [];
@@ -84,66 +73,54 @@ public static class FnisLineParser
             flags.Duration,
             flags.Triggers,
             flags.Triggers2,
-            new List<FnisMotionData>(),
-            new List<FnisRotationData>());
+            new List<FnisMotion>(),
+            new List<FnisRotation>());
 
         return FnisListParseResult<FnisAnimation>.Success(animation, fileData.NextPos);
     }
 
-    public static int FindLineEnd(ReadOnlySpan<char> source, int position)
-    {
+    public static int FindLineEnd(ReadOnlySpan<char> source, int position) {
         int index = source[position..].IndexOfAny('\r', '\n');
 
-        if (index < 0)
-        {
+        if (index < 0) {
             return source.Length;
         }
 
         return position + index;
     }
 
-    public static int NextLine(ReadOnlySpan<char> source, int lineEnd)
-    {
-        if (lineEnd >= source.Length)
-        {
+    public static int NextLine(ReadOnlySpan<char> source, int lineEnd) {
+        if (lineEnd >= source.Length) {
             return source.Length;
         }
 
-        if (source[lineEnd] == '\r')
-        {
+        if (source[lineEnd] == '\r') {
             int position = lineEnd + 1;
-            if (position < source.Length && source[position] == '\n')
-            {
+            if (position < source.Length && source[position] == '\n') {
                 position++;
             }
 
             return position;
         }
 
-        if (source[lineEnd] == '\n')
-        {
+        if (source[lineEnd] == '\n') {
             return lineEnd + 1;
         }
 
         return lineEnd;
     }
 
-    public static void SkipWhitespaceAndComments(ReadOnlySpan<char> source, ref int position, int end)
-    {
-        while (position < end)
-        {
-            while (position < end && char.IsWhiteSpace(source[position]))
-            {
+    public static void SkipWhitespaceAndComments(ReadOnlySpan<char> source, ref int position, int end) {
+        while (position < end) {
+            while (position < end && char.IsWhiteSpace(source[position])) {
                 position++;
             }
 
-            if (position >= end)
-            {
+            if (position >= end) {
                 return;
             }
 
-            if (source[position] != '\'')
-            {
+            if (source[position] != '\'') {
                 return;
             }
 
@@ -155,22 +132,19 @@ public static class FnisLineParser
         }
     }
 
-    public static bool IsVersionLine(ReadOnlySpan<char> line)
-    {
+    public static bool IsVersionLine(ReadOnlySpan<char> line) {
         int position = 0;
 
         SkipWhiteSpace(line, ref position);
 
-        if (position >= line.Length)
-        {
+        if (position >= line.Length) {
             return false;
         }
 
         return line[position..].StartsWith("Version", StringComparison.OrdinalIgnoreCase);
     }
 
-    public static bool TryParseVersion(ReadOnlySpan<char> line, out int major, out int minor)
-    {
+    public static bool TryParseVersion(ReadOnlySpan<char> line, out int major, out int minor) {
         major = 0;
         minor = 0;
 
@@ -178,31 +152,26 @@ public static class FnisLineParser
 
         SkipWhiteSpace(line, ref position);
 
-        if (!ConsumeLiteral(line, ref position, "Version"))
-        {
+        if (!ConsumeLiteral(line, ref position, "Version")) {
             return false;
         }
 
         SkipWhiteSpace(line, ref position);
-        if (position < line.Length && (line[position] == 'v' || line[position] == 'V'))
-        {
+        if (position < line.Length && (line[position] == 'v' || line[position] == 'V')) {
             position++;
 
             SkipWhiteSpace(line, ref position);
         }
 
-        if (!TryReadInteger(line, ref position, out major))
-        {
+        if (!TryReadInteger(line, ref position, out major)) {
             return false;
         }
 
         SkipWhiteSpace(line, ref position);
-        if (position < line.Length && line[position] == '.')
-        {
+        if (position < line.Length && line[position] == '.') {
             position++;
 
-            if (!TryReadInteger(line, ref position, out minor))
-            {
+            if (!TryReadInteger(line, ref position, out minor)) {
                 return false;
             }
         }
@@ -210,39 +179,33 @@ public static class FnisLineParser
         return true;
     }
 
-    public static bool IsContinuationLine(ReadOnlySpan<char> line)
-    {
+    public static bool IsContinuationLine(ReadOnlySpan<char> line) {
         int position = 0;
 
         SkipWhiteSpace(line, ref position);
 
-        if (position >= line.Length)
-        {
+        if (position >= line.Length) {
             return false;
         }
 
         return TryConsumeToken(line, ref position, "+");
     }
 
-    private static bool TryConsumeToken(ReadOnlySpan<char> source, ref int position, ReadOnlySpan<char> token)
-    {
-        if (position + token.Length > source.Length)
-        {
+    private static bool TryConsumeToken(ReadOnlySpan<char> source, ref int position, ReadOnlySpan<char> token) {
+        if (position + token.Length > source.Length) {
             return false;
         }
 
         int start = position;
 
-        if (!source[position..].StartsWith(token, StringComparison.Ordinal))
-        {
+        if (!source[position..].StartsWith(token, StringComparison.Ordinal)) {
             return false;
         }
 
         position += token.Length;
 
         if (position < source.Length && !char.IsWhiteSpace(source[position]) &&
-            source[position] != ',')
-        {
+            source[position] != ',') {
             position = start;
             return false;
         }
@@ -253,15 +216,12 @@ public static class FnisLineParser
     /// <remarks>
     /// NOTE: Case ignored
     /// </remarks>
-    private static bool ConsumeLiteral(ReadOnlySpan<char> source, ref int position, ReadOnlySpan<char> value)
-    {
-        if (position + value.Length > source.Length)
-        {
+    private static bool ConsumeLiteral(ReadOnlySpan<char> source, ref int position, ReadOnlySpan<char> value) {
+        if (position + value.Length > source.Length) {
             return false;
         }
 
-        if (!source[position..].StartsWith(value, StringComparison.OrdinalIgnoreCase))
-        {
+        if (!source[position..].StartsWith(value, StringComparison.OrdinalIgnoreCase)) {
             return false;
         }
 
@@ -269,17 +229,14 @@ public static class FnisLineParser
         return true;
     }
 
-    private static bool TryReadInteger(ReadOnlySpan<char> source, ref int position, out int value)
-    {
+    private static bool TryReadInteger(ReadOnlySpan<char> source, ref int position, out int value) {
         int start = position;
 
-        while (position < source.Length && char.IsDigit(source[position]))
-        {
+        while (position < source.Length && char.IsDigit(source[position])) {
             position++;
         }
 
-        if (start == position)
-        {
+        if (start == position) {
             value = 0;
             return false;
         }
@@ -287,10 +244,8 @@ public static class FnisLineParser
         return int.TryParse(source[start..position], NumberStyles.None, CultureInfo.InvariantCulture, out value);
     }
 
-    private static void SkipWhiteSpace(ReadOnlySpan<char> source, ref int position)
-    {
-        while (position < source.Length && char.IsWhiteSpace(source[position]))
-        {
+    private static void SkipWhiteSpace(ReadOnlySpan<char> source, ref int position) {
+        while (position < source.Length && char.IsWhiteSpace(source[position])) {
             position++;
         }
     }

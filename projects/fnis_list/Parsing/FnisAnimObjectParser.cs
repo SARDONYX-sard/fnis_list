@@ -6,8 +6,7 @@ namespace fnis_list;
 /// <summary>
 /// Parsed FNIS animation object data.
 /// </summary>
-public readonly struct FnisAnimObjectData
-{
+public readonly struct FnisAnimObjectSpan {
     /// <summary>
     /// Gets the object name span.
     /// </summary>
@@ -24,8 +23,7 @@ public readonly struct FnisAnimObjectData
     /// <summary>
     /// Initializes parsed animation object data.
     /// </summary>
-    public FnisAnimObjectData(TextSpan name, FnisActorRole role)
-    {
+    public FnisAnimObjectSpan(TextSpan name, FnisActorRole role) {
         this.Name = name;
         this.Role = role;
     }
@@ -34,8 +32,7 @@ public readonly struct FnisAnimObjectData
 /// <summary>
 /// Parses FNIS animation objects.
 /// </summary>
-public static class FnisAnimObjectParser
-{
+public static class FnisAnimObjectParser {
     /// <summary>
     /// Parses animation objects from the remaining part of an animation line.
     /// </summary>
@@ -48,80 +45,67 @@ public static class FnisAnimObjectParser
     /// Normal animation objects are whitespace-separated names.
     /// Paired and kill-move animation objects use <c>Name/1</c> or <c>Name/2</c>.
     /// </remarks>
-    public static FnisListParseResult<List<FnisAnimObjectData>> Parse(ReadOnlySpan<char> source, TextSpan input, bool isPairAndKill)
-    {
+    public static FnisListParseResult<List<FnisAnimObjectSpan>> Parse(ReadOnlySpan<char> source, TextSpan input, bool isPairAndKill) {
         int position = input.Pos;
         int end = input.End;
 
-        if ((uint)position > (uint)source.Length || (uint)end > (uint)source.Length || position > end)
-        {
-            return FnisListParseResult<List<FnisAnimObjectData>>.Failure(FnisListParseErrorKind.InvalidSource, position);
+        if ((uint)position > (uint)source.Length || (uint)end > (uint)source.Length || position > end) {
+            return FnisListParseResult<List<FnisAnimObjectSpan>>.Failure(FnisListParseErrorKind.InvalidSource, position);
         }
 
-        List<FnisAnimObjectData> objects = new();
+        List<FnisAnimObjectSpan> objects = new();
 
-        while (true)
-        {
-            while (position < end && char.IsWhiteSpace(source[position]))
-            {
+        while (true) {
+            while (position < end && char.IsWhiteSpace(source[position])) {
                 position++;
             }
 
-            if (position >= end)
-            {
+            if (position >= end) {
                 break;
             }
             TextSpan tokenSpan = TakeUntilSpace(source, ref position, end);
 
-            FnisListParseResult<FnisAnimObjectData> result = TryParse(source, tokenSpan, isPairAndKill);
-            if (result.IsFailure)
-            {
-                return FnisListParseResult<List<FnisAnimObjectData>>.Failure(result.Error, result.Pos);
+            FnisListParseResult<FnisAnimObjectSpan> result = TryParse(source, tokenSpan, isPairAndKill);
+            if (result.IsFailure) {
+                return FnisListParseResult<List<FnisAnimObjectSpan>>.Failure(result.Error, result.Pos);
             }
 
             objects.Add(result.Value);
         }
 
-        return FnisListParseResult<List<FnisAnimObjectData>>.Success(objects, position);
+        return FnisListParseResult<List<FnisAnimObjectSpan>>.Success(objects, position);
     }
 
-    private static FnisListParseResult<FnisAnimObjectData> TryParse(ReadOnlySpan<char> source, TextSpan tokenSpan, bool pairAndKill)
-    {
+    private static FnisListParseResult<FnisAnimObjectSpan> TryParse(ReadOnlySpan<char> source, TextSpan tokenSpan, bool pairAndKill) {
         return pairAndKill ? ParsePairAndKill(source, tokenSpan) : ParseNormal(source, tokenSpan);
     }
 
-    private static FnisListParseResult<FnisAnimObjectData> ParseNormal(ReadOnlySpan<char> source, TextSpan tokenSpan)
-    {
-        if (tokenSpan.Len == 0)
-        {
-            return FnisListParseResult<FnisAnimObjectData>.Failure(FnisListParseErrorKind.InvalidAnimationObject, tokenSpan.Pos);
+    private static FnisListParseResult<FnisAnimObjectSpan> ParseNormal(ReadOnlySpan<char> source, TextSpan tokenSpan) {
+        if (tokenSpan.Len == 0) {
+            return FnisListParseResult<FnisAnimObjectSpan>.Failure(FnisListParseErrorKind.InvalidAnimationObject, tokenSpan.Pos);
         }
 
         ReadOnlySpan<char> token = tokenSpan.Slice(source);
 
-        if (token.IndexOf('/') >= 0)
-        {
-            return FnisListParseResult<FnisAnimObjectData>.Failure(FnisListParseErrorKind.NumberedAnimationObjectRequiresPairAndKill, tokenSpan.Pos);
+        if (token.IndexOf('/') >= 0) {
+            return FnisListParseResult<FnisAnimObjectSpan>.Failure(FnisListParseErrorKind.NumberedAnimationObjectRequiresPairAndKill, tokenSpan.Pos);
         }
 
-        FnisAnimObjectData value = new(tokenSpan, FnisActorRole.Active);
+        FnisAnimObjectSpan value = new(tokenSpan, FnisActorRole.Active);
 
-        return FnisListParseResult<FnisAnimObjectData>.Success(value, tokenSpan.End);
+        return FnisListParseResult<FnisAnimObjectSpan>.Success(value, tokenSpan.End);
     }
 
-    private static FnisListParseResult<FnisAnimObjectData> ParsePairAndKill(ReadOnlySpan<char> source, TextSpan tokenSpan)
-    {
+    private static FnisListParseResult<FnisAnimObjectSpan> ParsePairAndKill(ReadOnlySpan<char> source, TextSpan tokenSpan) {
         ReadOnlySpan<char> token = tokenSpan.Slice(source);
 
         int slash = token.IndexOf('/');
-        if (slash < 0)
-        {
-            return FnisListParseResult<FnisAnimObjectData>.Failure(FnisListParseErrorKind.PairAndKillRoleRequiresSlash, tokenSpan.End);
+        if (slash < 0) {
+            return FnisListParseResult<FnisAnimObjectSpan>.Failure(FnisListParseErrorKind.PairAndKillRoleRequiresSlash, tokenSpan.End);
         }
 
-        if (slash <= 0 || slash != token.LastIndexOf('/'))
-        {
-            return FnisListParseResult<FnisAnimObjectData>.Failure(FnisListParseErrorKind.InvalidAnimationObject, tokenSpan.Pos);
+        if (slash <= 0 || slash != token.LastIndexOf('/')) {
+            return FnisListParseResult<FnisAnimObjectSpan>.Failure(FnisListParseErrorKind.InvalidAnimationObject, tokenSpan.Pos);
         }
 
         ReadOnlySpan<char> name = token[..slash];
@@ -129,30 +113,25 @@ public static class FnisAnimObjectParser
 
         FnisActorRole actorRole;
 
-        if (role.SequenceEqual("1"))
-        {
+        if (role.SequenceEqual("1")) {
             actorRole = FnisActorRole.Active;
         }
-        else if (role.SequenceEqual("2"))
-        {
+        else if (role.SequenceEqual("2")) {
             actorRole = FnisActorRole.Passive;
         }
-        else
-        {
-            return FnisListParseResult<FnisAnimObjectData>.Failure(FnisListParseErrorKind.InvalidPairedAndKillRoleNumber, tokenSpan.Pos);
+        else {
+            return FnisListParseResult<FnisAnimObjectSpan>.Failure(FnisListParseErrorKind.InvalidPairedAndKillRoleNumber, tokenSpan.Pos);
         }
 
-        FnisAnimObjectData value = new(new TextSpan(tokenSpan.Pos, name.Length), actorRole);
+        FnisAnimObjectSpan value = new(new TextSpan(tokenSpan.Pos, name.Length), actorRole);
 
-        return FnisListParseResult<FnisAnimObjectData>.Success(value, tokenSpan.End);
+        return FnisListParseResult<FnisAnimObjectSpan>.Success(value, tokenSpan.End);
     }
 
-    private static TextSpan TakeUntilSpace(ReadOnlySpan<char> source, ref int position, int end)
-    {
+    private static TextSpan TakeUntilSpace(ReadOnlySpan<char> source, ref int position, int end) {
         int start = position;
 
-        while (position < end && !char.IsWhiteSpace(source[position]))
-        {
+        while (position < end && !char.IsWhiteSpace(source[position])) {
             position++;
         }
 

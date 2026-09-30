@@ -3,11 +3,9 @@ using Xunit;
 
 namespace fnis_list.Tests;
 
-public sealed class FnisLineParserTests
-{
+public sealed class FnisLineParserTests {
     [Fact]
-    public void ParsesBasicAnimationWithFlags()
-    {
+    public void ParsesBasicAnimationWithFlags() {
         const string source = "b -a,ac,h Attack attack.hkx";
 
         FnisListParseResult<FnisAnimation> result = FnisLineParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
@@ -32,8 +30,7 @@ public sealed class FnisLineParserTests
     [InlineData("+", "Second", "second.hkx", FnisAnimType.SequencedContinued)]
     [InlineData("pa", "HugB", "paired_hugb.hkx", FnisAnimType.Paired)]
     [InlineData("km", "KillMove", "killmove.hkx", FnisAnimType.KillMove)]
-    public void ParsesAnimationType(string typeText, string eventText, string fileText, FnisAnimType expectedType)
-    {
+    public void ParsesAnimationType(string typeText, string eventText, string fileText, FnisAnimType expectedType) {
         string source = $"{typeText} {eventText} {fileText}";
 
         FnisAnimation animation = ParseSingle(source);
@@ -51,15 +48,13 @@ public sealed class FnisLineParserTests
     [InlineData("s", "-a", FnisAnimFlags.Acyclic)]
     [InlineData("so", "", FnisAnimFlags.None)]
     [InlineData("+", "", FnisAnimFlags.None)]
-    public void ParsesSimpleFlags(string typeText, string flagsText, FnisAnimFlags expectedFlags)
-    {
+    public void ParsesSimpleFlags(string typeText, string flagsText, FnisAnimFlags expectedFlags) {
         FnisAnimation animation = ParseSingle($"{typeText} {flagsText} Attack attack.hkx");
         Assert.Equal(expectedFlags, animation.Flags);
     }
 
     [Fact]
-    public void ParsesTriggers()
-    {
+    public void ParsesTriggers() {
         const string source = "b -ac,THit/0.5,TEnd/1.25 Simple simple.hkx";
 
         FnisAnimation animation = ParseSingle(source);
@@ -78,9 +73,21 @@ public sealed class FnisLineParserTests
         Assert.Equal(0, animation.ObjectCount);
     }
 
+    [Theory]
+    [InlineData("a", true)]
+    [InlineData("o", true)]
+    [InlineData("bsa", false)]
+    [InlineData("k", false)]
+    [InlineData("bsa,a", false)]
+    [InlineData("k,a", false)]
+    [InlineData("bsa,k,a", false)]
+    public void ShouldCheckAnimFile_ReturnsExpectedResult(string flags, bool expected) {
+        FnisAnimation animation = ParseSingle($"b -{flags} Event animation.hkx");
+        Assert.Equal(expected, animation.ShouldCheckAnimFile());
+    }
+
     [Fact]
-    public void ParsesPairedAnimation()
-    {
+    public void ParsesPairedAnimation() {
         const string source = "pa -o,D20.0,THit/2.5,T2_Kill/3.25 HugB paired_hugb.hkx Sword/1 Axe/2";
 
         FnisAnimation animation = ParseSingle(source);
@@ -113,8 +120,7 @@ public sealed class FnisLineParserTests
     }
 
     [Fact]
-    public void ParsesKillMoveAnimation()
-    {
+    public void ParsesKillMoveAnimation() {
         const string source = "km -ac,h,o,D35.5,TStart/1.0,TEnd/20.0 KillMove killmove.hkx Weapon/1 Victim/2";
 
         FnisAnimation animation = ParseSingle(source);
@@ -149,8 +155,7 @@ public sealed class FnisLineParserTests
     [Theory]
     [InlineData("b -o Attack attack.hkx Sword Shield")]
     [InlineData("pa -o Attack attack.hkx Sword/1 Shield/2")]
-    public void ParsesObjectsOk(string source)
-    {
+    public void ParsesObjectsOk(string source) {
         FnisAnimation animation = ParseSingle(source);
         Assert.True(animation.ObjectCount > 0);
     }
@@ -160,8 +165,7 @@ public sealed class FnisLineParserTests
     [InlineData("pa -o Attack attack.hkx Sword/3", FnisListParseErrorKind.InvalidPairedAndKillRoleNumber)]
     [InlineData("pa -o Attack attack.hkx Sword/foo", FnisListParseErrorKind.InvalidPairedAndKillRoleNumber)]
     [InlineData("pa -o Attack attack.hkx Sword", FnisListParseErrorKind.PairAndKillRoleRequiresSlash)]
-    public void ParsesObjectsError(string source, FnisListParseErrorKind expectedError)
-    {
+    public void ParsesObjectsError(string source, FnisListParseErrorKind expectedError) {
         FnisListParseResult<FnisAnimation> result = FnisLineParser.Parse(source, TextSpan.FromRange(0, source.Length));
 
         Assert.True(result.IsFailure);
@@ -169,8 +173,7 @@ public sealed class FnisLineParserTests
     }
 
     [Fact]
-    public void DoesNotReadPastLineEnd()
-    {
+    public void DoesNotReadPastLineEnd() {
         const string source = "b Attack attack.hkx\nb Other other.hkx";
 
         int lineEnd = source.IndexOf('\n');
@@ -188,8 +191,7 @@ public sealed class FnisLineParserTests
     }
 
     [Fact]
-    public void PreservesAbsoluteTextSpanPositions()
-    {
+    public void PreservesAbsoluteTextSpanPositions() {
         const string source = "header\n\nb -a,o Attack attack.hkx Sword Shield\n";
 
         int lineStart = source.IndexOf("b -a", StringComparison.Ordinal);
@@ -211,16 +213,14 @@ public sealed class FnisLineParserTests
     [InlineData("", FnisListParseErrorKind.UnexpectedEnd)]
     [InlineData("x", FnisListParseErrorKind.InvalidSyntax)]
     [InlineData("invalid Attack attack.hkx", FnisListParseErrorKind.InvalidSyntax)]
-    public void RejectsInvalidType(string source, FnisListParseErrorKind expectedError)
-    {
+    public void RejectsInvalidType(string source, FnisListParseErrorKind expectedError) {
         FnisListParseResult<FnisAnimation> result = FnisLineParser.Parse(source, new TextSpan(0, source.Length));
         Assert.True(result.IsFailure);
         Assert.Equal(expectedError, result.Error);
     }
 
     [Fact]
-    public void FailsWhenEventIsMissing()
-    {
+    public void FailsWhenEventIsMissing() {
         const string source = "b";
 
         FnisListParseResult<FnisAnimation> result = FnisLineParser.Parse(source, new TextSpan(0, source.Length));
@@ -230,8 +230,7 @@ public sealed class FnisLineParserTests
     }
 
     [Fact]
-    public void FailsWhenFileIsMissing()
-    {
+    public void FailsWhenFileIsMissing() {
         const string source = "b Attack";
 
         FnisListParseResult<FnisAnimation> result = FnisLineParser.Parse(source, new TextSpan(0, source.Length));
@@ -240,12 +239,10 @@ public sealed class FnisLineParserTests
         Assert.Equal(FnisListParseErrorKind.UnexpectedEnd, result.Error);
     }
 
-    private static FnisAnimation ParseSingle(string source)
-    {
+    private static FnisAnimation ParseSingle(string source) {
         FnisListParseResult<FnisAnimation> result = FnisLineParser.Parse(source, new TextSpan(0, source.Length));
 
-        if (result.IsFailure)
-        {
+        if (result.IsFailure) {
             Assert.Fail(result.ReadableError(source.AsSpan()));
         }
 

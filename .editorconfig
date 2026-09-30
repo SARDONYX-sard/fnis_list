@@ -11,25 +11,49 @@ indent_size = 4
 indent_size = 2
 
 [*.cs]
+# Formatting
 dotnet_sort_system_directives_first = true
 dotnet_separate_import_directive_groups = false
 
-csharp_prefer_braces = true:error
+csharp_new_line_before_open_brace = none
+csharp_new_line_before_else = true
 
-dotnet_style_qualification_for_field = true:error
-dotnet_style_qualification_for_method = true:error
-dotnet_style_qualification_for_property = true:error
+# Braces
+csharp_prefer_braces = true
 
-csharp_style_namespace_declarations = file_scoped:error
+# Explicit qualification
+dotnet_style_qualification_for_field = true
+dotnet_style_qualification_for_method = true
+dotnet_style_qualification_for_property = true
 
-dotnet_style_require_accessibility_modifiers = always:error
+# Namespace
+csharp_style_namespace_declarations = file_scoped
 
-csharp_style_var_for_built_in_types = false:error
-csharp_style_var_when_type_is_apparent = false:error
-csharp_style_var_elsewhere = false:error
+# Accessibility
+dotnet_style_require_accessibility_modifiers = always
 
-csharp_style_pattern_matching_over_is_with_cast_check = true:error
-csharp_style_pattern_matching_over_as_with_null_check = true:error
-csharp_style_throw_expression = true:error
-csharp_style_coalesce_expression = true:error
-csharp_style_null_propagation = true:error
+# Explicit types instead of var
+csharp_style_var_for_built_in_types = false
+csharp_style_var_when_type_is_apparent = false
+csharp_style_var_elsewhere = false
+
+# Pattern matching
+csharp_style_pattern_matching_over_is_with_cast_check = true
+csharp_style_pattern_matching_over_as_with_null_check = true
+
+# Simplifications
+csharp_style_throw_expression = true
+csharp_style_coalesce_expression = true
+csharp_style_null_propagation = true
+
+# Diagnostics: unused / unnecessary code
+dotnet_diagnostic.IDE0004.severity = error # Remove unnecessary cast
+dotnet_diagnostic.IDE0005.severity = error # Remove unnecessary using
+dotnet_diagnostic.IDE0051.severity = error # Private member is never used
+dotnet_diagnostic.IDE0060.severity = error # Remove unused parameter
+dotnet_diagnostic.IDE0079.severity = error # Remove unnecessary suppression
+
+# Diagnostics: unused locals / fields
+dotnet_diagnostic.CS0168.severity = error # Variable is declared but never used
+dotnet_diagnostic.CS0219.severity = error # Variable is assigned but never used
+dotnet_diagnostic.CS0414.severity = error # Field is assigned but never used

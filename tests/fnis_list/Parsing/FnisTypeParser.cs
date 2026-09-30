@@ -3,8 +3,7 @@ using Xunit;
 
 namespace fnis_list.Tests;
 
-public sealed class FnisTypeParserTests
-{
+public sealed class FnisTypeParserTests {
     [Theory]
     [InlineData("AnimVar", FnisAnimType.AnimVar, 7)]
     [InlineData("AAPrefix", FnisAnimType.Alternate, 8)]
@@ -19,11 +18,10 @@ public sealed class FnisTypeParserTests
     [InlineData("b", FnisAnimType.Basic, 1)]
     [InlineData("o", FnisAnimType.AnimObject, 1)]
     [InlineData("s", FnisAnimType.Sequenced, 1)]
-    public void ParsesType(string source, FnisAnimType expectedType, int expectedNextPos)
-    {
-        FnisListParseResult<FnisTypeData> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length)); Assert.True(result.IsSuccess);
+    public void ParsesType(string source, FnisAnimType expectedType, int expectedNextPos) {
+        FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length)); Assert.True(result.IsSuccess);
 
-        FnisTypeData value = result.Value;
+        FnisTypeSpan value = result.Value;
 
         Assert.Equal(expectedType, value.Type);
         Assert.Equal(expectedNextPos, value.NextPos);
@@ -35,9 +33,8 @@ public sealed class FnisTypeParserTests
     [InlineData("  pa", FnisAnimType.Paired, 4)]
     [InlineData("\tpa", FnisAnimType.Paired, 3)]
     [InlineData("\nkm", FnisAnimType.KillMove, 3)]
-    public void SkipsLeadingWhitespace(string source, FnisAnimType expectedType, int expectedNextPos)
-    {
-        FnisListParseResult<FnisTypeData> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
+    public void SkipsLeadingWhitespace(string source, FnisAnimType expectedType, int expectedNextPos) {
+        FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
 
         Assert.True(result.IsSuccess);
 
@@ -53,9 +50,8 @@ public sealed class FnisTypeParserTests
     [InlineData("km KillMove")]
     [InlineData("s Sequence")]
     [InlineData("+ Continuation")]
-    public void StopsBeforeFollowingWhitespace(string source)
-    {
-        FnisListParseResult<FnisTypeData> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
+    public void StopsBeforeFollowingWhitespace(string source) {
+        FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
 
         Assert.True(result.IsSuccess);
 
@@ -69,9 +65,8 @@ public sealed class FnisTypeParserTests
     [InlineData("b,Attack", FnisAnimType.Basic, 1)]
     [InlineData("so,-a", FnisAnimType.SequencedOptimized, 2)]
     [InlineData("pa,Event", FnisAnimType.Paired, 2)]
-    public void AcceptsCommaAsTokenDelimiter(string source, FnisAnimType expectedType, int expectedNextPos)
-    {
-        FnisListParseResult<FnisTypeData> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
+    public void AcceptsCommaAsTokenDelimiter(string source, FnisAnimType expectedType, int expectedNextPos) {
+        FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
 
         Assert.True(result.IsSuccess);
 
@@ -83,9 +78,8 @@ public sealed class FnisTypeParserTests
     [InlineData("")]
     [InlineData(" ")]
     [InlineData("\t")]
-    public void RejectsEmptyInputAsUnexpectedEnd(string source)
-    {
-        FnisListParseResult<FnisTypeData> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
+    public void RejectsEmptyInputAsUnexpectedEnd(string source) {
+        FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
 
         Assert.True(result.IsFailure);
         Assert.Equal(FnisListParseErrorKind.UnexpectedEnd, result.Error);
@@ -100,20 +94,18 @@ public sealed class FnisTypeParserTests
     [InlineData("soo")]
     [InlineData("paa")]
     [InlineData("k")]
-    public void RejectsInvalidType(string source)
-    {
-        FnisListParseResult<FnisTypeData> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
+    public void RejectsInvalidType(string source) {
+        FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
         Assert.True(result.IsFailure);
         Assert.Equal(FnisListParseErrorKind.InvalidSyntax, result.Error);
         Assert.Equal(0, result.Pos);
     }
 
     [Fact]
-    public void PreservesInputOffset()
-    {
+    public void PreservesInputOffset() {
         const string source = "xx b Attack";
 
-        FnisListParseResult<FnisTypeData> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(3, 1));
+        FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(3, 1));
 
         Assert.True(result.IsSuccess);
 
@@ -123,11 +115,10 @@ public sealed class FnisTypeParserTests
     }
 
     [Fact]
-    public void DoesNotReadPastInputSpan()
-    {
+    public void DoesNotReadPastInputSpan() {
         const string source = "b Attack";
 
-        FnisListParseResult<FnisTypeData> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, 1));
+        FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, 1));
 
         Assert.True(result.IsSuccess);
 
@@ -136,11 +127,10 @@ public sealed class FnisTypeParserTests
     }
 
     [Fact]
-    public void ParsesTypeWithinInputSpan()
-    {
+    public void ParsesTypeWithinInputSpan() {
         const string source = "so";
 
-        FnisListParseResult<FnisTypeData> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, 1));
+        FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, 1));
 
         Assert.True(result.IsSuccess);
 
@@ -150,11 +140,10 @@ public sealed class FnisTypeParserTests
     }
 
     [Fact]
-    public void ParsesOnlyWithinInputSpan()
-    {
+    public void ParsesOnlyWithinInputSpan() {
         const string source = "xx b Attack";
 
-        FnisListParseResult<FnisTypeData> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(3, 3));
+        FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(3, 3));
 
         Assert.True(result.IsSuccess);
 

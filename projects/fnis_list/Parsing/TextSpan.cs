@@ -5,8 +5,7 @@ namespace fnis_list;
 /// <summary>
 /// Represents a slice of text by its start position and length.
 /// </summary>
-public struct TextSpan
-{
+public struct TextSpan {
     /// <summary>
     /// Gets the start position of this span.
     /// </summary>
@@ -22,15 +21,12 @@ public struct TextSpan
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">
     /// </exception>
-    public TextSpan(int pos, int len)
-    {
-        if (pos < 0)
-        {
+    public TextSpan(int pos, int len) {
+        if (pos < 0) {
             throw new ArgumentOutOfRangeException(nameof(pos));
         }
 
-        if (len < 0)
-        {
+        if (len < 0) {
             throw new ArgumentOutOfRangeException(nameof(len));
         }
 
@@ -44,8 +40,7 @@ public struct TextSpan
     /// <returns>The represented slice of <paramref name="source"/>.</returns>
     /// <exception cref="ArgumentOutOfRangeException">
     /// </exception>
-    public ReadOnlySpan<char> Slice(ReadOnlySpan<char> source)
-    {
+    public ReadOnlySpan<char> Slice(ReadOnlySpan<char> source) {
         return source.Slice(this.Pos, this.Len);
     }
 
@@ -67,15 +62,12 @@ public struct TextSpan
     /// <returns>A text span covering the specified range.</returns>
     /// <exception cref="ArgumentOutOfRangeException">
     /// </exception>
-    public static TextSpan FromRange(int start, int end)
-    {
-        if (start < 0)
-        {
+    public static TextSpan FromRange(int start, int end) {
+        if (start < 0) {
             throw new ArgumentOutOfRangeException(nameof(start));
         }
 
-        if (end < start)
-        {
+        if (end < start) {
             throw new ArgumentOutOfRangeException(nameof(end));
         }
 

@@ -3,13 +3,11 @@ using Xunit;
 
 namespace fnis_list.Tests;
 
-public sealed class FnisFlagParserTests
-{
+public sealed class FnisFlagParserTests {
     [Theory]
     [InlineData("-a,ac,h Attack", FnisAnimFlags.Acyclic | FnisAnimFlags.AnimatedCamera | FnisAnimFlags.HeadTracking)]
-    public void Parse_ParsesLineFlags(string input, FnisAnimFlags expected)
-    {
-        FnisListParseResult<FnisFlagData> result = FnisFlagParser.ParseLine(input.AsSpan(), new TextSpan(0, input.Length));
+    public void Parse_ParsesLineFlags(string input, FnisAnimFlags expected) {
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.Parse(input.AsSpan(), new TextSpan(0, input.Length));
 
         Assert.True(result.IsSuccess);
         Assert.Equal(expected, result.Value.Flags);
@@ -34,9 +32,8 @@ public sealed class FnisFlagParserTests
     [InlineData(",", FnisAnimFlags.None)]
     [InlineData("a,unknown,md", FnisAnimFlags.Acyclic | FnisAnimFlags.MotionDriven)]
     [InlineData("unknown", FnisAnimFlags.None)]
-    public void Parse_ParsesFlags(string input, FnisAnimFlags expected)
-    {
-        FnisListParseResult<FnisFlagData> result = FnisFlagParser.Parse(input.AsSpan(), new TextSpan(0, input.Length));
+    public void Parse_ParsesFlags(string input, FnisAnimFlags expected) {
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(input.AsSpan(), new TextSpan(0, input.Length));
 
         Assert.True(result.IsSuccess);
         Assert.Equal(expected, result.Value.Flags);
@@ -48,9 +45,8 @@ public sealed class FnisFlagParserTests
     [InlineData("a,D0.25,h", 0.25f)]
     [InlineData("D-1.5", -1.5f)]
     [InlineData("D1e2", 100f)]
-    public void Parse_ParsesDuration(string input, float expected)
-    {
-        FnisListParseResult<FnisFlagData> result = FnisFlagParser.Parse(input.AsSpan(), new TextSpan(0, input.Length));
+    public void Parse_ParsesDuration(string input, float expected) {
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(input.AsSpan(), new TextSpan(0, input.Length));
 
         Assert.True(result.IsSuccess);
         Assert.Equal(expected, result.Value.Duration);
@@ -62,9 +58,8 @@ public sealed class FnisFlagParserTests
     [InlineData("D")]
     [InlineData("Dabc")]
     [InlineData("D.")]
-    public void Parse_InvalidDurationReturnsNull(string input)
-    {
-        FnisListParseResult<FnisFlagData> result = FnisFlagParser.Parse(input.AsSpan(), new TextSpan(0, input.Length));
+    public void Parse_InvalidDurationReturnsNull(string input) {
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(input.AsSpan(), new TextSpan(0, input.Length));
 
         Assert.True(result.IsSuccess);
         Assert.Null(result.Value.Duration);
@@ -76,9 +71,8 @@ public sealed class FnisFlagParserTests
     [InlineData("a,B0.5,h", 0.5f)]
     [InlineData("B-1.5", -1.5f)]
     [InlineData("B1e2", 100f)]
-    public void Parse_ParsesBlendTime(string input, float expected)
-    {
-        FnisListParseResult<FnisFlagData> result = FnisFlagParser.Parse(input.AsSpan(), new TextSpan(0, input.Length));
+    public void Parse_ParsesBlendTime(string input, float expected) {
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(input.AsSpan(), new TextSpan(0, input.Length));
 
         Assert.True(result.IsSuccess);
         Assert.Equal(expected, result.Value.BlendTime);
@@ -90,9 +84,8 @@ public sealed class FnisFlagParserTests
     [InlineData("B")]
     [InlineData("Babc")]
     [InlineData("B.")]
-    public void Parse_InvalidBlendTimeReturnsNull(string input)
-    {
-        FnisListParseResult<FnisFlagData> result = FnisFlagParser.Parse(input.AsSpan(), new TextSpan(0, input.Length));
+    public void Parse_InvalidBlendTimeReturnsNull(string input) {
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(input.AsSpan(), new TextSpan(0, input.Length));
 
         Assert.True(result.IsSuccess);
         Assert.Null(result.Value.BlendTime);
@@ -109,9 +102,8 @@ public sealed class FnisFlagParserTests
     // T/1.0 -> missing trigger name
     // T2_Hi/1.0 -> trigger2
     [InlineData("THi/abc,THi,T/1.0,T2_Hi/1.0", 0)]
-    public void Parse_ParsesTriggerCount(string input, int expected)
-    {
-        FnisListParseResult<FnisFlagData> result = FnisFlagParser.Parse(input.AsSpan(), new TextSpan(0, input.Length));
+    public void Parse_ParsesTriggerCount(string input, int expected) {
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(input.AsSpan(), new TextSpan(0, input.Length));
 
         Assert.True(result.IsSuccess);
         Assert.Equal(expected, result.Value.Triggers.Count);
@@ -120,9 +112,8 @@ public sealed class FnisFlagParserTests
     [Theory]
     [InlineData("T2_Hi/0.5,T2_En/1.25", 2)]
     [InlineData("THi/0.5,T2_Hi/2.0,TEn/1.25", 1)]
-    public void Parse_ParsesTrigger2Count(string input, int expected)
-    {
-        FnisListParseResult<FnisFlagData> result = FnisFlagParser.Parse(input.AsSpan(), new TextSpan(0, input.Length));
+    public void Parse_ParsesTrigger2Count(string input, int expected) {
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(input.AsSpan(), new TextSpan(0, input.Length));
 
         Assert.True(result.IsSuccess);
         Assert.Equal(expected, result.Value.Triggers2.Count);
@@ -132,13 +123,12 @@ public sealed class FnisFlagParserTests
     [InlineData("THi/0.5", 0, "Hi", 0.5f)]
     [InlineData("THi/0.5,TEn/1.25", 1, "En", 1.25f)]
     [InlineData("a,D1.0,THi/0.5,h,TEn/1.25", 1, "En", 1.25f)]
-    public void Parse_ParsesTrigger(string input, int index, string expectedEvent, float expectedTime)
-    {
-        FnisListParseResult<FnisFlagData> result = FnisFlagParser.Parse(input.AsSpan(), new TextSpan(0, input.Length));
+    public void Parse_ParsesTrigger(string input, int index, string expectedEvent, float expectedTime) {
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(input.AsSpan(), new TextSpan(0, input.Length));
 
         Assert.True(result.IsSuccess);
 
-        FnisTriggerData trigger = result.Value.Triggers[index];
+        FnisTriggerSpan trigger = result.Value.Triggers[index];
 
         Assert.Equal(expectedEvent, trigger.Event.Slice(input));
         Assert.Equal(expectedTime, trigger.Time);
@@ -148,9 +138,8 @@ public sealed class FnisFlagParserTests
     [InlineData("")]
     [InlineData("THi/abc,THi,T/1.0")]
     [InlineData("T2_Hi/0.5")]
-    public void Parse_DoesNotAddInvalidNormalTriggers(string input)
-    {
-        FnisListParseResult<FnisFlagData> result = FnisFlagParser.Parse(input.AsSpan(), new TextSpan(0, input.Length));
+    public void Parse_DoesNotAddInvalidNormalTriggers(string input) {
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(input.AsSpan(), new TextSpan(0, input.Length));
 
         Assert.True(result.IsSuccess);
         Assert.Empty(result.Value.Triggers);
@@ -159,13 +148,12 @@ public sealed class FnisFlagParserTests
     [Theory]
     [InlineData("T2_Hi/0.5,T2_En/1.25", 0, "2_Hi", 0.5f)]
     [InlineData("T2_Hi/0.5,T2_En/1.25", 1, "2_En", 1.25f)]
-    public void Parse_ParsesTrigger2(string input, int index, string expectedEvent, float expectedTime)
-    {
-        FnisListParseResult<FnisFlagData> result = FnisFlagParser.Parse(input.AsSpan(), new TextSpan(0, input.Length));
+    public void Parse_ParsesTrigger2(string input, int index, string expectedEvent, float expectedTime) {
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(input.AsSpan(), new TextSpan(0, input.Length));
 
         Assert.True(result.IsSuccess);
 
-        FnisTriggerData trigger = result.Value.Triggers2[index];
+        FnisTriggerSpan trigger = result.Value.Triggers2[index];
 
         Assert.Equal(expectedEvent, trigger.Event.Slice(input));
         Assert.Equal(expectedTime, trigger.Time);
@@ -175,9 +163,8 @@ public sealed class FnisFlagParserTests
     [InlineData("prefix a,h,md", 7)]
     [InlineData("xxx,a,h,md", 4)]
     [InlineData("012345a,h,md", 6)]
-    public void Parse_StartsAtPosition(string source, int position)
-    {
-        FnisListParseResult<FnisFlagData> result = FnisFlagParser.Parse(source.AsSpan(), new TextSpan(position, source.Length - position));
+    public void Parse_StartsAtPosition(string source, int position) {
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(source.AsSpan(), new TextSpan(position, source.Length - position));
 
         Assert.True(result.IsSuccess);
         Assert.Equal(
@@ -188,33 +175,30 @@ public sealed class FnisFlagParserTests
     }
 
     [Fact]
-    public void Parse_ReturnsNextPos()
-    {
+    public void Parse_ReturnsNextPos() {
         const string source = "a,h,md";
 
-        FnisListParseResult<FnisFlagData> result = FnisFlagParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(source.AsSpan(), new TextSpan(0, source.Length));
 
         Assert.True(result.IsSuccess);
         Assert.Equal(source.Length, result.Value.NextPos);
     }
 
     [Fact]
-    public void Parse_NextPosIsAbsolute()
-    {
+    public void Parse_NextPosIsAbsolute() {
         const string source = "prefix,a,h,md";
 
-        FnisListParseResult<FnisFlagData> result = FnisFlagParser.Parse(source.AsSpan(), new TextSpan(7, source.Length - 7));
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(source.AsSpan(), new TextSpan(7, source.Length - 7));
 
         Assert.True(result.IsSuccess);
         Assert.Equal(source.Length, result.Value.NextPos);
     }
 
     [Fact]
-    public void Parse_NextPosCanBeUsedToReadNextPart()
-    {
+    public void Parse_NextPosCanBeUsedToReadNextPart() {
         const string source = "a,h,md Attack  attack.hkx";
 
-        FnisListParseResult<FnisFlagData> result = FnisFlagParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(source.AsSpan(), new TextSpan(0, source.Length));
 
         Assert.True(result.IsSuccess);
 
@@ -225,13 +209,27 @@ public sealed class FnisFlagParserTests
     }
 
     [Theory]
+    [InlineData("a,h,md Attack  attack.hkx")]
+    [InlineData("a, h, md Attack  attack.hkx")]
+    [InlineData("a ,h ,md Attack  attack.hkx")]
+    [InlineData("a , h , md Attack  attack.hkx")]
+    [InlineData("a,   h,   md Attack  attack.hkx")]
+    [InlineData("a   ,h   ,md Attack  attack.hkx")]
+    [InlineData("a   ,   h   ,   md Attack  attack.hkx")]
+    public void Parse_AllowsWhitespaceAroundFlagSeparators(string source) {
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(source.AsSpan(), new TextSpan(0, source.Length));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(FnisAnimFlags.Acyclic | FnisAnimFlags.HeadTracking | FnisAnimFlags.MotionDriven, result.Value.Flags);
+    }
+
+    [Theory]
     [InlineData(4)]
     [InlineData(10)]
-    public void Parse_InvalidPositionReturnsFailure(int position)
-    {
+    public void Parse_InvalidPositionReturnsFailure(int position) {
         const string source = "abc";
 
-        FnisListParseResult<FnisFlagData> result = FnisFlagParser.Parse(source.AsSpan(), new TextSpan(position, 0));
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(source.AsSpan(), new TextSpan(position, 0));
 
         Assert.True(result.IsFailure);
         Assert.Equal(FnisListParseErrorKind.InvalidSource, result.Error);
@@ -239,10 +237,9 @@ public sealed class FnisFlagParserTests
     }
 
     [Fact]
-    public void Parse_StopsAtWhitespace()
-    {
+    public void Parse_StopsAtWhitespace() {
         const string source = "a,h,md Event";
-        FnisListParseResult<FnisFlagData> result = FnisFlagParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
+        FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(source.AsSpan(), new TextSpan(0, source.Length));
 
         Assert.True(result.IsSuccess);
         Assert.Equal(
