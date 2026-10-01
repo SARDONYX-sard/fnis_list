@@ -43,6 +43,13 @@ public ref struct FnisListReader {
     public int VersionMajor => this._versionMajor;
     public int VersionMinor => this._versionMinor;
 
+    /// <summary>
+    /// Read one FNIS_*List.txt
+    /// </summary>
+    ///
+    /// <remarks>
+    /// If <c>source</c> is an empty string, the default value is used and <c>FnisListParseResult.IsSuccess</c> is returned.
+    /// </remarks>
     public FnisListParseResult<FnisPattern> Parse() {
         List<FnisAnimation> animations = new();
         List<FnisAnimVarSpan> animVars = new();
@@ -67,7 +74,7 @@ public ref struct FnisListReader {
             // Format: Version v<D>.<D>
             if (FnisLineParser.IsVersionLine(lineText)) {
                 if (!FnisLineParser.TryParseVersion(lineText, out int major, out int minor)) {
-                    return FnisListParseResult<FnisPattern>.Failure(FnisListParseErrorKind.InvalidSyntax, line.Pos);
+                    return FnisListParseResult<FnisPattern>.Failure(FnisListParseErrorKind.InvalidVersion, line.Pos);
                 }
 
                 this._versionMajor = major;
@@ -81,7 +88,7 @@ public ref struct FnisListReader {
             // Format: MD <time:f32> <x> <y> <z>
             if (FnisRotationParser.IsMotionLine(lineText)) {
                 if (animations.Count == 0) {
-                    return FnisListParseResult<FnisPattern>.Failure(FnisListParseErrorKind.InvalidSyntax, line.Pos);
+                    return FnisListParseResult<FnisPattern>.Failure(FnisListParseErrorKind.MissingRelatedAnimation, line.Pos);
                 }
 
                 FnisListParseResult<FnisMotion> result = FnisRotationParser.ParseMotion(this._source, line);
@@ -100,7 +107,7 @@ public ref struct FnisListReader {
             // Format: RD <time:f32> <z>
             if (FnisRotationParser.IsRotationLine(lineText)) {
                 if (animations.Count == 0) {
-                    return FnisListParseResult<FnisPattern>.Failure(FnisListParseErrorKind.InvalidSyntax, line.Pos);
+                    return FnisListParseResult<FnisPattern>.Failure(FnisListParseErrorKind.MissingRelatedAnimation, line.Pos);
                 }
 
                 FnisListParseResult<FnisRotation> result = FnisRotationParser.ParseRotation(this._source, line);

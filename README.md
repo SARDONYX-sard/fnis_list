@@ -73,4 +73,24 @@ for (int i = 0; i < pattern.Animations.Count; i++)
     Assert.Equal(FnisRotationDataKind.DeltaZAngle, rotation.Kind);
     Assert.Equal(expectedRotationAngles[i], rotation.ZAngle);
 }
+
+const string source2 = """
+b Attack attack.hkx
++ Second second.hkx
+""";
+
+FnisListParseResult<FnisPattern> result2 = new FnisListReader(source2).Parse();
+Assert.True(result2.IsFailure);
+
+static string GetCallerFilePath([System.Runtime.CompilerServices.CallerFilePath] string path = "") => path;
+string sourcePath = GetCallerFilePath();
+
+Assert.Equal(
+        $"""
+        {sourcePath}:2:1
+           │
+         2 │ + Second second.hkx
+           │ ^ {FnisListParseResult<FnisPattern>.ErrorMessage(FnisListParseErrorKind.InvalidSequence)}
+        """.Replace("\r\n", "\n"),
+    result2.ReadableError(source2, sourcePath));
 ```

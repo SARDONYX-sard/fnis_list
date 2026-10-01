@@ -15,7 +15,7 @@ public static class FnisAAParser {
         TextSpan prefixLine = GetLine(source, position);
 
         if (!TryParsePrefix(source, prefixLine, out TextSpan prefix)) {
-            return FnisListParseResult<FnisAlternateAnimation>.Failure(FnisListParseErrorKind.InvalidSyntax, prefixLine.Pos);
+            return FnisListParseResult<FnisAlternateAnimation>.Failure(FnisListParseErrorKind.InvalidAAPrefix, prefixLine.Pos);
         }
 
         position = FnisLineParser.NextLine(source, prefixLine.End);
@@ -33,7 +33,7 @@ public static class FnisAAParser {
 
             if (IsSetLine(text)) {
                 if (!TryParseSet(source, line, out FnisAASetSpan set)) {
-                    return FnisListParseResult<FnisAlternateAnimation>.Failure(FnisListParseErrorKind.InvalidSyntax, line.Pos);
+                    return FnisListParseResult<FnisAlternateAnimation>.Failure(FnisListParseErrorKind.InvalidAASet, line.Pos);
                 }
 
                 sets.Add(set);
@@ -43,7 +43,7 @@ public static class FnisAAParser {
 
             if (IsTriggerLine(text)) {
                 if (!TryParseTrigger(source, line, out FnisAnimTriggerSpan trigger)) {
-                    return FnisListParseResult<FnisAlternateAnimation>.Failure(FnisListParseErrorKind.InvalidSyntax, line.Pos);
+                    return FnisListParseResult<FnisAlternateAnimation>.Failure(FnisListParseErrorKind.InvalidAATrigger, line.Pos);
                 }
 
                 triggers.Add(trigger);

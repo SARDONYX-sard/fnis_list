@@ -34,7 +34,7 @@ public sealed class FnisRotationParserTests {
         FnisListParseResult<FnisMotion> result = FnisRotationParser.ParseMotion(source, line);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(FnisListParseErrorKind.InvalidSyntax, result.Error);
+        Assert.Equal(FnisListParseErrorKind.InvalidMotion, result.Error);
     }
 
     [Theory]
@@ -85,7 +85,7 @@ public sealed class FnisRotationParserTests {
         FnisListParseResult<FnisRotation> result = FnisRotationParser.ParseRotation(source, line);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(FnisListParseErrorKind.InvalidSyntax, result.Error);
+        Assert.Equal(FnisListParseErrorKind.InvalidRotation, result.Error);
     }
 
     [Fact]

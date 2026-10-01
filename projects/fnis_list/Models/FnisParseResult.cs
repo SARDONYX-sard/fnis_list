@@ -81,12 +81,17 @@ public readonly struct FnisListParseResult<T> {
     ///
     /// <code>
     /// Example error:
-    ///   ┌─ path:2:1
-    ///   │
-    /// 2 │ + Second second.hkx
-    ///   │ ^ SequencedContinued ('+') must follow s/so/fu/fuo/ch.
+    ///
+    /// path:2:1
+    ///    │
+    ///  2 │ + Second second.hkx
+    ///    │ ^ SequencedContinued ('+') must follow s/so/fu/fuo/ch.
     /// </code>
     /// </summary>
+    ///
+    /// <exception cref="InvalidOperationException">
+    /// If not IsFailure
+    /// </exception>
     public string ReadableError(ReadOnlySpan<char> source, string path = "") {
         if (!this.IsFailure) {
             throw new InvalidOperationException("The parse result does not contain an error.");
@@ -113,41 +118,92 @@ public readonly struct FnisListParseResult<T> {
         }
 
         return
-            $"  ┌─ {path}:{lineNumber}:{column + 1}\n" +
-            $"  │\n" +
+            $"{path}:{lineNumber}:{column + 1}\n" +
+            $"   │\n" +
             $"{lineNumber,2} │ {line}\n" +
-            $"  │ {new string(' ', column)}^ {ErrorMessage(this._error)}";
+            $"   │ {new string(' ', column)}^ {ErrorMessage(this._error)}";
     }
-
 
     /// <summary>
     /// Return EnumErrorKind to readable message.
     /// </summary>
     public static string ErrorMessage(FnisListParseErrorKind error) {
         return error switch {
-            FnisListParseErrorKind.InvalidSource
-                => "invalid source",
+            // ---------------------------------------------------------------------------------------------------------
+            // Common
+            // ---------------------------------------------------------------------------------------------------------
+
+            FnisListParseErrorKind.InvalidSourceRange
+                => "invalid source range; position and end must be within the source bounds",
 
             FnisListParseErrorKind.UnexpectedEnd
                 => "unexpected end of input",
 
-            FnisListParseErrorKind.InvalidSyntax
-                => "invalid syntax",
+            // ---------------------------------------------------------------------------------------------------------
+            // FNIS Version
+            // ---------------------------------------------------------------------------------------------------------
 
-            FnisListParseErrorKind.MissingDuration
-                => "missing duration",
+            FnisListParseErrorKind.InvalidVersion
+                => "invalid version; expected: Version V<major>.<minor>",
+
+            // ---------------------------------------------------------------------------------------------------------
+            // FNIS Animation
+            // ---------------------------------------------------------------------------------------------------------
+
+            FnisListParseErrorKind.InvalidAnimationType
+                => "invalid animation type; expected one of: AnimVar, AAPrefix, fuo, ofa, ch, fu, km, pa, so, +, b, o, s",
 
             FnisListParseErrorKind.InvalidSequence
                 => "SequencedContinued ('+') must follow s/so/fu/fuo/ch",
-
-            FnisListParseErrorKind.InvalidNumber
-                => "invalid number",
 
             FnisListParseErrorKind.UnexpectedAnimationObject
                 => "Animation object data (remaining input) was provided without the -o flag",
 
             FnisListParseErrorKind.InvalidAnimationObject
                 => "invalid animation object",
+
+            // ---------------------------------------------------------------------------------------------------------
+            // FNIS Motion / Rotation
+            // ---------------------------------------------------------------------------------------------------------
+
+            FnisListParseErrorKind.MissingRelatedAnimation
+                => "MD/RD definitions require a related animation definition such as b, s, so, fu, fuo, or ch",
+
+            FnisListParseErrorKind.InvalidMotion
+                => "invalid MD definition; expected: MD <time> <deltaX> <deltaY> <deltaZ>",
+
+            FnisListParseErrorKind.InvalidRotation
+                => "invalid RD definition; expected: RD <time> <x> <y> <z> <w> or RD <time> <angle>",
+
+            // ---------------------------------------------------------------------------------------------------------
+            // FNIS AnimVar
+            // ---------------------------------------------------------------------------------------------------------
+
+            FnisListParseErrorKind.InvalidAnimVarDefinition
+                => "invalid AnimVar definition; expected: AnimVar <Name> <BOOL|INT32|REAL> <value>",
+
+            FnisListParseErrorKind.InvalidAnimVarType
+                => "invalid AnimVar type; expected one of: BOOL, INT32, REAL",
+
+            FnisListParseErrorKind.InvalidAnimVarValue
+                => "invalid AnimVar value; expected a value valid for the declared type",
+
+            // ---------------------------------------------------------------------------------------------------------
+            // FNIS AA
+            // ---------------------------------------------------------------------------------------------------------
+
+            FnisListParseErrorKind.InvalidAAPrefix
+                => "invalid AAprefix definition; expected: AAprefix <prefix>",
+
+            FnisListParseErrorKind.InvalidAASet
+                => "invalid AAset definition; expected: AAset <group> <slots>",
+
+            FnisListParseErrorKind.InvalidAATrigger
+                => "invalid alternate-animation trigger; expected: T <animation> <trigger>/<time> [...]",
+
+            // ---------------------------------------------------------------------------------------------------------
+            // FNIS Paired / KillMove
+            // ---------------------------------------------------------------------------------------------------------
 
             FnisListParseErrorKind.NumberedAnimationObjectRequiresPairAndKill
                 => "numbered animation objects (`Name/1` or `Name/2`) are only valid for PairedAndKill animations",
@@ -158,11 +214,19 @@ public readonly struct FnisListParseResult<T> {
             FnisListParseErrorKind.InvalidPairedAndKillRoleNumber
                 => "invalid PairedAndKill role number; only 1 and 2 are valid",
 
+            // ---------------------------------------------------------------------------------------------------------
+            // FNIS Chair
+            // ---------------------------------------------------------------------------------------------------------
+
             FnisListParseErrorKind.ChairRequiresThreeContinuations
                 => "Chair requires at least 3 continuation animations",
 
             FnisListParseErrorKind.ChairAllowsOnlyNoFlagsOrAnimationObjects
                 => "Chair allows no flags or the -o flag only",
+
+            // ---------------------------------------------------------------------------------------------------------
+            // FNIS Furniture
+            // ---------------------------------------------------------------------------------------------------------
 
             FnisListParseErrorKind.FurnitureRequiresAcyclic
                 => "Furniture requires the -a flag",
@@ -185,25 +249,37 @@ public readonly struct FnisListParseResult<T> {
 /// Describes the result of parsing.
 /// </summary>
 public enum FnisListParseErrorKind : byte {
+    // -----------------------------------------------------------------------------------------------------------------
+    // Common
+    // -----------------------------------------------------------------------------------------------------------------
+
     /// <summary>
-    /// The input source or span is invalid.
+    /// The input source span is out of range.
     /// </summary>
-    InvalidSource,
+    InvalidSourceRange,
 
     /// <summary>
     /// The input ended before the required syntax was complete.
     /// </summary>
     UnexpectedEnd,
 
-    /// <summary>
-    /// The input does not match the expected syntax.
-    /// </summary>
-    InvalidSyntax,
+    // -----------------------------------------------------------------------------------------------------------------
+    // FNIS Version
+    // -----------------------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// A required duration is missing.
+    /// The version format is invalid.
     /// </summary>
-    MissingDuration,
+    InvalidVersion,
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // FNIS Animation
+    // -----------------------------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// The animation type is invalid.
+    /// </summary>
+    InvalidAnimationType,
 
     /// <summary>
     /// SequencedContinued ('+') must follow s/so/fu/fuo/ch.
@@ -211,19 +287,75 @@ public enum FnisListParseErrorKind : byte {
     InvalidSequence,
 
     /// <summary>
-    /// A numeric value is invalid.
-    /// </summary>
-    InvalidNumber,
-
-    /// <summary>
     /// Animation object data was provided without the <c>-o</c> flag.
     /// </summary>
     UnexpectedAnimationObject,
 
     /// <summary>
-    /// Invalid AnimObject Syntax.
+    /// The animation object syntax is invalid.
     /// </summary>
     InvalidAnimationObject,
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // FNIS Motion / Rotation
+    // -----------------------------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// An MD or RD definition has no related animation definition.
+    /// </summary>
+    MissingRelatedAnimation,
+
+    /// <summary>
+    /// An MD motion definition has an invalid format.
+    /// </summary>
+    InvalidMotion,
+
+    /// <summary>
+    /// An RD rotation definition has an invalid format.
+    /// </summary>
+    InvalidRotation,
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // FNIS AnimVar
+    // -----------------------------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// An AnimVar definition has an invalid syntax.
+    /// </summary>
+    InvalidAnimVarDefinition,
+
+    /// <summary>
+    /// An AnimVar type is invalid.
+    /// </summary>
+    InvalidAnimVarType,
+
+    /// <summary>
+    /// An AnimVar value is invalid for its declared type.
+    /// </summary>
+    InvalidAnimVarValue,
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // FNIS AA
+    // -----------------------------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// An alternate-animation prefix definition is invalid.
+    /// </summary>
+    InvalidAAPrefix,
+
+    /// <summary>
+    /// An alternate-animation set definition is invalid.
+    /// </summary>
+    InvalidAASet,
+
+    /// <summary>
+    /// An alternate-animation trigger definition is invalid.
+    /// </summary>
+    InvalidAATrigger,
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // FNIS Paired / KillMove
+    // -----------------------------------------------------------------------------------------------------------------
 
     /// <summary>
     /// A numbered animation object requires a PairedAndKill animation.
@@ -241,6 +373,10 @@ public enum FnisListParseErrorKind : byte {
     /// </summary>
     InvalidPairedAndKillRoleNumber,
 
+    // -----------------------------------------------------------------------------------------------------------------
+    // FNIS Chair
+    // -----------------------------------------------------------------------------------------------------------------
+
     /// <summary>
     /// A Chair requires at least three continuation animations.
     /// </summary>
@@ -250,6 +386,10 @@ public enum FnisListParseErrorKind : byte {
     /// A Chair allows no flags or the <c>-o</c> flag only.
     /// </summary>
     ChairAllowsOnlyNoFlagsOrAnimationObjects,
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // FNIS Furniture
+    // -----------------------------------------------------------------------------------------------------------------
 
     /// <summary>
     /// A Furniture animation requires the <c>-a</c> flag.

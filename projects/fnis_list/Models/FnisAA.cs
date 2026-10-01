@@ -1,9 +1,7 @@
 // Maintainer note:
 // Do not add mutating methods for sets or triggers.
 // This preserves the safety invariant required by CollectionsMarshal.AsSpan.
-using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 namespace fnis_list;
 
@@ -75,10 +73,10 @@ public sealed class FnisAlternateAnimation {
     /// <summary>
     /// Gets the animation sets declared by this alternate-animation block.
     /// </summary>
-    public ReadOnlySpan<FnisAASetSpan> Sets => CollectionsMarshal.AsSpan(this._sets); // Safety: _sets is immutable after construction.
+    public IReadOnlyList<FnisAASetSpan> Sets => this._sets;
 
     /// <summary>
     /// Gets the animations and their triggers declared by this alternate-animation block.
     /// </summary>
-    public ReadOnlySpan<FnisAnimTriggerSpan> Triggers => CollectionsMarshal.AsSpan(this._triggers); // Safety: _triggers is immutable after construction.
+    public IReadOnlyList<FnisAnimTriggerSpan> Triggers => this._triggers;
 }

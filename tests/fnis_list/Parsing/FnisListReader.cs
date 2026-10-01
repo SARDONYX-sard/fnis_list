@@ -35,11 +35,7 @@ public sealed class FnisListReaderTests {
         FnisAnimation animation = Assert.Single(result.Value.Animations);
 
         Assert.Equal(FnisAnimType.Basic, animation.Type);
-        Assert.Equal(
-            FnisAnimFlags.Acyclic |
-            FnisAnimFlags.AnimatedCamera |
-            FnisAnimFlags.HeadTracking,
-            animation.Flags);
+        Assert.Equal(FnisAnimFlags.Acyclic | FnisAnimFlags.AnimatedCamera | FnisAnimFlags.HeadTracking, animation.Flags);
         Assert.Equal("Attack", animation.AnimEvent(source));
         Assert.Equal("attack.hkx", animation.AnimFile(source));
     }
@@ -52,9 +48,7 @@ public sealed class FnisListReaderTests {
             + Third third.hkx
             """;
 
-        FnisListReader reader = new(source);
-
-        FnisListParseResult<FnisPattern> result = reader.Parse();
+        FnisListParseResult<FnisPattern> result = new FnisListReader(source).Parse();
 
         Assert.True(result.IsSuccess);
         Assert.Equal(3, result.Value.Animations.Count);
@@ -82,18 +76,12 @@ public sealed class FnisListReaderTests {
             + Second second.hkx
             """;
 
-        FnisListReader reader = new(source);
-
-        FnisListParseResult<FnisPattern> result = reader.Parse();
+        FnisListParseResult<FnisPattern> result = new FnisListReader(source).Parse();
 
         Assert.True(result.IsSuccess);
         Assert.Equal(2, result.Value.Animations.Count);
-        Assert.Equal(
-            FnisAnimType.SequencedOptimized,
-            result.Value.Animations[0].Type);
-        Assert.Equal(
-            FnisAnimType.SequencedContinued,
-            result.Value.Animations[1].Type);
+        Assert.Equal(FnisAnimType.SequencedOptimized, result.Value.Animations[0].Type);
+        Assert.Equal(FnisAnimType.SequencedContinued, result.Value.Animations[1].Type);
     }
 
     [Fact]
@@ -118,9 +106,7 @@ public sealed class FnisListReaderTests {
         Assert.Equal(FnisAnimType.Sequenced, result.Value.Animations[1].Type);
         Assert.Equal("First", result.Value.Animations[1].AnimEvent(source));
 
-        Assert.Equal(
-            FnisAnimType.SequencedContinued,
-            result.Value.Animations[2].Type);
+        Assert.Equal(FnisAnimType.SequencedContinued, result.Value.Animations[2].Type);
         Assert.Equal("Second", result.Value.Animations[2].AnimEvent(source));
 
         Assert.Equal(FnisAnimType.KillMove, result.Value.Animations[3].Type);
@@ -136,22 +122,18 @@ public sealed class FnisListReaderTests {
             pa -o,D20.0,THit/2.5,T2_Kill/3.25 HugB paired_hugb.hkx Sword/1 Axe/2
             """;
 
-        FnisListReader reader = new(source);
-
-        FnisListParseResult<FnisPattern> result = reader.Parse();
-
+        FnisListParseResult<FnisPattern> result = new FnisListReader(source).Parse();
         Assert.True(result.IsSuccess);
 
         FnisAnimation animation = Assert.Single(result.Value.Animations);
-
         Assert.Equal(FnisAnimType.Paired, animation.Type);
         Assert.Equal("HugB", animation.AnimEvent(source));
         Assert.Equal("paired_hugb.hkx", animation.AnimFile(source));
         Assert.Equal(FnisAnimFlags.AnimObjects, animation.Flags);
         Assert.Equal(20.0f, animation.Duration);
-        Assert.Equal(1, animation.TriggerCount);
-        Assert.Equal(1, animation.Trigger2Count);
-        Assert.Equal(2, animation.ObjectCount);
+        Assert.Single(animation.Triggers);
+        Assert.Single(animation.Triggers2);
+        Assert.Equal(2, animation.Objects.Count);
     }
 
     [Fact]
@@ -174,12 +156,10 @@ public sealed class FnisListReaderTests {
         Assert.Equal(FnisAnimType.KillMove, animation.Type);
         Assert.Equal("KillMove", animation.AnimEvent(source));
         Assert.Equal("killmove.hkx", animation.AnimFile(source));
-        Assert.Equal(
-            FnisAnimFlags.AnimatedCamera | FnisAnimFlags.HeadTracking | FnisAnimFlags.AnimObjects,
-            animation.Flags);
+        Assert.Equal(FnisAnimFlags.AnimatedCamera | FnisAnimFlags.HeadTracking | FnisAnimFlags.AnimObjects, animation.Flags);
         Assert.Equal(35.5f, animation.Duration);
-        Assert.Equal(2, animation.TriggerCount);
-        Assert.Equal(2, animation.ObjectCount);
+        Assert.Equal(2, animation.Triggers.Count);
+        Assert.Equal(2, animation.Objects.Count);
     }
 
     [Fact]
@@ -201,31 +181,23 @@ public sealed class FnisListReaderTests {
         FnisAnimation first = result.Value.Animations[0];
         Assert.Equal(FnisAnimType.Chair, first.Type);
         Assert.Equal("PlayFluteSitting", first.AnimEvent(source));
-        Assert.Equal(
-            "PlayFluteSittingStart.hkx",
-            first.AnimFile(source));
+        Assert.Equal("PlayFluteSittingStart.hkx", first.AnimFile(source));
         Assert.Equal(FnisAnimFlags.AnimObjects, first.Flags);
 
         FnisAnimation second = result.Value.Animations[1];
         Assert.Equal(FnisAnimType.SequencedContinued, second.Type);
         Assert.Equal("PlayFluteSitting_2", second.AnimEvent(source));
-        Assert.Equal(
-            "PlayFluteSittingIdlebase.hkx",
-            second.AnimFile(source));
+        Assert.Equal("PlayFluteSittingIdlebase.hkx", second.AnimFile(source));
 
         FnisAnimation third = result.Value.Animations[2];
         Assert.Equal(FnisAnimType.SequencedContinued, third.Type);
         Assert.Equal("PlayFluteSitting_3", third.AnimEvent(source));
-        Assert.Equal(
-            "PlayFluteSittingIdlevar1.hkx",
-            third.AnimFile(source));
+        Assert.Equal("PlayFluteSittingIdlevar1.hkx", third.AnimFile(source));
 
         FnisAnimation fourth = result.Value.Animations[3];
         Assert.Equal(FnisAnimType.SequencedContinued, fourth.Type);
         Assert.Equal("PlayFluteSitting_4", fourth.AnimEvent(source));
-        Assert.Equal(
-            "PlayFluteSittingIdlevar2.hkx",
-            fourth.AnimFile(source));
+        Assert.Equal("PlayFluteSittingIdlevar2.hkx", fourth.AnimFile(source));
     }
 
     [Theory]
@@ -248,10 +220,7 @@ public sealed class FnisListReaderTests {
             + -o Kneel_Loop2 Kneel_Loop2.hkx myAnimObject1 myAnimObject2
             + -a,o Kneel_Exit Kneel_Exit.hkx myAnimObject1 myAnimObject2
             """;
-
-        FnisListReader reader = new(source);
-
-        FnisListParseResult<FnisPattern> result = reader.Parse();
+        FnisListParseResult<FnisPattern> result = new FnisListReader(source).Parse();
 
         Assert.True(result.IsSuccess);
         Assert.Equal(4, result.Value.Animations.Count);
@@ -276,9 +245,7 @@ public sealed class FnisListReaderTests {
 
         FnisAnimation fourth = result.Value.Animations[3];
         Assert.Equal(FnisAnimType.SequencedContinued, fourth.Type);
-        Assert.Equal(
-            FnisAnimFlags.Acyclic | FnisAnimFlags.AnimObjects,
-            fourth.Flags);
+        Assert.Equal(FnisAnimFlags.Acyclic | FnisAnimFlags.AnimObjects, fourth.Flags);
         Assert.Equal("Kneel_Exit", fourth.AnimEvent(source));
         Assert.Equal("Kneel_Exit.hkx", fourth.AnimFile(source));
     }
@@ -287,9 +254,7 @@ public sealed class FnisListReaderTests {
     [InlineData("fu Kneel_Enter Kneel_Enter.hkx", FnisListParseErrorKind.FurnitureRequiresAcyclic)]
     [InlineData("fu -a Kneel_Enter Kneel_Enter.hkx", FnisListParseErrorKind.FurnitureRequiresThreeAnimations)]
     public void RejectsInvalidFurnitureStart(string source, FnisListParseErrorKind errKind) {
-        FnisListReader reader = new(source);
-
-        FnisListParseResult<FnisPattern> result = reader.Parse();
+        FnisListParseResult<FnisPattern> result = new FnisListReader(source).Parse();
 
         Assert.True(result.IsFailure);
         Assert.Equal(errKind, result.Error);
@@ -302,10 +267,7 @@ public sealed class FnisListReaderTests {
             AnimVar SomeInt INT32 42
             AnimVar SomeReal REAL 1.25
             """;
-
-        FnisListReader reader = new(source);
-
-        FnisListParseResult<FnisPattern> result = reader.Parse();
+        FnisListParseResult<FnisPattern> result = new FnisListReader(source).Parse();
 
         Assert.True(result.IsSuccess);
         Assert.Equal(3, result.Value.AnimVars.Count);
@@ -345,27 +307,22 @@ public sealed class FnisListReaderTests {
         Assert.Empty(result.Value.AnimVars);
         Assert.Single(result.Value.AlternateAnimations);
 
-        FnisAlternateAnimation alternate =
-            result.Value.AlternateAnimations[0];
+        FnisAlternateAnimation alternate = result.Value.AlternateAnimations[0];
 
         Assert.Equal("MyPrefix", alternate.Prefix.Slice(source));
 
-        Assert.Equal(2, alternate.Sets.Length);
+        Assert.Equal(2, alternate.Sets.Count);
         Assert.Equal("GroupA", alternate.Sets[0].Group.Slice(source));
         Assert.Equal((ulong)2, alternate.Sets[0].Slots);
         Assert.Equal("GroupB", alternate.Sets[1].Group.Slice(source));
         Assert.Equal((ulong)4, alternate.Sets[1].Slots);
 
-        Assert.Equal(2, alternate.Triggers.Length);
+        Assert.Equal(2, alternate.Triggers.Count);
 
-        Assert.Equal(
-            "AnimA",
-            alternate.Triggers[0].AnimName.Slice(source));
+        Assert.Equal("AnimA", alternate.Triggers[0].AnimName.Slice(source));
         Assert.Equal(2, alternate.Triggers[0].Triggers.Count);
 
-        Assert.Equal(
-            "AnimB",
-            alternate.Triggers[1].AnimName.Slice(source));
+        Assert.Equal("AnimB", alternate.Triggers[1].AnimName.Slice(source));
         Assert.Single(alternate.Triggers[1].Triggers);
     }
 
@@ -390,18 +347,9 @@ public sealed class FnisListReaderTests {
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value.Animations);
         Assert.Equal(2, result.Value.AlternateAnimations.Count);
-
-        Assert.Equal(
-            "Attack",
-            result.Value.Animations[0].AnimEvent(source));
-
-        Assert.Equal(
-            "First",
-            result.Value.AlternateAnimations[0].Prefix.Slice(source));
-
-        Assert.Equal(
-            "Second",
-            result.Value.AlternateAnimations[1].Prefix.Slice(source));
+        Assert.Equal("Attack", result.Value.Animations[0].AnimEvent(source));
+        Assert.Equal("First", result.Value.AlternateAnimations[0].Prefix.Slice(source));
+        Assert.Equal("Second", result.Value.AlternateAnimations[1].Prefix.Slice(source));
     }
 
     [Fact]
@@ -414,7 +362,6 @@ public sealed class FnisListReaderTests {
             """;
 
         FnisListReader reader = new(source);
-
         FnisListParseResult<FnisPattern> result = reader.Parse();
 
         Assert.True(result.IsSuccess);
@@ -437,12 +384,9 @@ public sealed class FnisListReaderTests {
             b Attack attack.hkx
             """;
 
-        FnisListReader reader = new(source);
-
-        FnisListParseResult<FnisPattern> result = reader.Parse();
+        FnisListParseResult<FnisPattern> result = new FnisListReader(source).Parse();
 
         Assert.True(result.IsSuccess);
-
         FnisAnimation animation = Assert.Single(result.Value.Animations);
         Assert.Equal("Attack", animation.AnimEvent(source));
     }
@@ -457,17 +401,12 @@ public sealed class FnisListReaderTests {
             """;
 
         FnisListReader reader = new(source);
-
         FnisListParseResult<FnisPattern> result = reader.Parse();
 
         Assert.True(result.IsSuccess);
         Assert.Equal(2, result.Value.Animations.Count);
-        Assert.Equal(
-            "Attack",
-            result.Value.Animations[0].AnimEvent(source));
-        Assert.Equal(
-            "Other",
-            result.Value.Animations[1].AnimEvent(source));
+        Assert.Equal("Attack", result.Value.Animations[0].AnimEvent(source));
+        Assert.Equal("Other", result.Value.Animations[1].AnimEvent(source));
     }
 
     [Fact]
@@ -485,20 +424,13 @@ public sealed class FnisListReaderTests {
             """;
 
         FnisListReader reader = new(source);
-
         FnisListParseResult<FnisPattern> result = reader.Parse();
 
         Assert.True(result.IsSuccess);
         Assert.Equal(3, result.Value.Animations.Count);
-        Assert.Equal(
-            FnisAnimType.Sequenced,
-            result.Value.Animations[0].Type);
-        Assert.Equal(
-            FnisAnimType.SequencedContinued,
-            result.Value.Animations[1].Type);
-        Assert.Equal(
-            FnisAnimType.SequencedContinued,
-            result.Value.Animations[2].Type);
+        Assert.Equal(FnisAnimType.Sequenced, result.Value.Animations[0].Type);
+        Assert.Equal(FnisAnimType.SequencedContinued, result.Value.Animations[1].Type);
+        Assert.Equal(FnisAnimType.SequencedContinued, result.Value.Animations[2].Type);
     }
 
     [Fact]
@@ -508,13 +440,10 @@ public sealed class FnisListReaderTests {
             """;
 
         FnisListReader reader = new(source);
-
         FnisListParseResult<FnisPattern> result = reader.Parse();
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            FnisListParseErrorKind.InvalidSequence,
-            result.Error);
+        Assert.Equal(FnisListParseErrorKind.InvalidSequence, result.Error);
     }
 
     [Theory]
@@ -531,25 +460,17 @@ public sealed class FnisListReaderTests {
         + Second second.hkx
         """)]
     public void RejectsContinuationAfterNonSequence(string source) {
-        FnisListReader reader = new(source);
-
-        FnisListParseResult<FnisPattern> result = reader.Parse();
+        FnisListParseResult<FnisPattern> result = new FnisListReader(source).Parse();
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            FnisListParseErrorKind.InvalidSequence,
-            result.Error);
+        Assert.Equal(FnisListParseErrorKind.InvalidSequence, result.Error);
     }
 
     [Theory]
-    [InlineData("x Attack attack.hkx", FnisListParseErrorKind.InvalidSyntax)]
-    [InlineData("invalid Attack attack.hkx", FnisListParseErrorKind.InvalidSyntax)]
-    public void RejectsInvalidLine(
-        string source,
-        FnisListParseErrorKind expectedError) {
-        FnisListReader reader = new(source);
-
-        FnisListParseResult<FnisPattern> result = reader.Parse();
+    [InlineData("x Attack attack.hkx", FnisListParseErrorKind.InvalidAnimationType)]
+    [InlineData("invalid Attack attack.hkx", FnisListParseErrorKind.InvalidAnimationType)]
+    public void RejectsInvalidLine(string source, FnisListParseErrorKind expectedError) {
+        FnisListParseResult<FnisPattern> result = new FnisListReader(source).Parse();
 
         Assert.True(result.IsFailure);
         Assert.Equal(expectedError, result.Error);
@@ -561,21 +482,15 @@ public sealed class FnisListReaderTests {
             b Attack
             """;
 
-        FnisListReader reader = new(source);
-
-        FnisListParseResult<FnisPattern> result = reader.Parse();
+        FnisListParseResult<FnisPattern> result = new FnisListReader(source).Parse();
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            FnisListParseErrorKind.UnexpectedEnd,
-            result.Error);
+        Assert.Equal(FnisListParseErrorKind.UnexpectedEnd, result.Error);
     }
 
     [Fact]
     public void ParsesEmptyInput() {
-        FnisListReader reader = new("");
-
-        FnisListParseResult<FnisPattern> result = reader.Parse();
+        FnisListParseResult<FnisPattern> result = new FnisListReader("").Parse();
 
         Assert.True(result.IsSuccess);
         Assert.Empty(result.Value.Animations);
@@ -583,75 +498,18 @@ public sealed class FnisListReaderTests {
         Assert.Empty(result.Value.AlternateAnimations);
     }
 
-    [Fact]
-    public void HandlesCrLf() {
-        const string source =
-            "b Attack attack.hkx\r\nb Other other.hkx\r\n";
-
-        FnisListReader reader = new(source);
-
-        FnisListParseResult<FnisPattern> result = reader.Parse();
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(2, result.Value.Animations.Count);
-        Assert.Equal("Attack", result.Value.Animations[0].AnimEvent(source));
-        Assert.Equal("Other", result.Value.Animations[1].AnimEvent(source));
-    }
-
-    [Fact]
-    public void HandlesCr() {
-        const string source = "b Attack attack.hkx\rb Other other.hkx";
-
-        FnisListReader reader = new(source);
-
-        FnisListParseResult<FnisPattern> result = reader.Parse();
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(2, result.Value.Animations.Count);
-        Assert.Equal("Attack", result.Value.Animations[0].AnimEvent(source));
-        Assert.Equal("Other", result.Value.Animations[1].AnimEvent(source));
-    }
-
-    [Fact]
-    public void HandlesLf() {
-        const string source = "b Attack attack.hkx\nb Other other.hkx";
-
-        FnisListReader reader = new(source);
-
-        FnisListParseResult<FnisPattern> result = reader.Parse();
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(2, result.Value.Animations.Count);
-        Assert.Equal("Attack", result.Value.Animations[0].AnimEvent(source));
-        Assert.Equal("Other", result.Value.Animations[1].AnimEvent(source));
-    }
-
-    [Fact]
-    public void ReadableErrorShowsLocationAndSourceLine() {
-        const string source = """
-            b Attack attack.hkx
-            + Second second.hkx
-            """;
-
+    [Theory]
+    [InlineData("\r\n")]
+    [InlineData("\r")]
+    [InlineData("\n")]
+    public void HandlesNewline(string newline) {
+        string source = $"b Attack attack.hkx{newline}b Other other.hkx{newline}";
         FnisListParseResult<FnisPattern> result = new FnisListReader(source).Parse();
-        Assert.True(result.IsFailure);
 
-        static string GetCallerFilePath([System.Runtime.CompilerServices.CallerFilePath] string path = "") {
-            return path;
-        }
-
-        Assert.Equal(NormalizeLineEndings(
-                $"""
-                  ┌─ {GetCallerFilePath()}:2:1
-                  │
-                 2 │ + Second second.hkx
-                  │ ^ {FnisListParseResult<FnisPattern>.ErrorMessage(FnisListParseErrorKind.InvalidSequence)}
-                """),
-            result.ReadableError(source, GetCallerFilePath()));
-    }
-
-    private static string NormalizeLineEndings(string value) {
-        return value.Replace("\r\n", "\n");
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value.Animations.Count);
+        Assert.Equal("Attack", result.Value.Animations[0].AnimEvent(source));
+        Assert.Equal("Other", result.Value.Animations[1].AnimEvent(source));
     }
 
     [Fact]
@@ -671,18 +529,16 @@ public sealed class FnisListReaderTests {
         FnisAnimation animation = Assert.Single(result.Value.Animations);
 
         Assert.Equal(FnisAnimType.Basic, animation.Type);
-        Assert.Equal(1, animation.MotionDataCount);
-        Assert.Equal(1, animation.RotationDataCount);
+        Assert.Single(animation.MotionData);
+        Assert.Single(animation.RotationData);
 
-        Assert.True(animation.TryGetMotionData(0, out FnisMotion motion));
-        Assert.Equal(1.25f, motion.Time);
-        Assert.Equal(10.0f, motion.DeltaX);
-        Assert.Equal(20.0f, motion.DeltaY);
-        Assert.Equal(30.0f, motion.DeltaZ);
+        Assert.Equal(1.25f, animation.MotionData[0].Time);
+        Assert.Equal(10.0f, animation.MotionData[0].DeltaX);
+        Assert.Equal(20.0f, animation.MotionData[0].DeltaY);
+        Assert.Equal(30.0f, animation.MotionData[0].DeltaZ);
 
-        Assert.True(animation.TryGetRotationData(0, out FnisRotation rotation));
-        Assert.Equal(FnisRotationKind.DeltaZAngle, rotation.Kind);
-        Assert.Equal(45.0f, rotation.ZAngle);
+        Assert.Equal(FnisRotationKind.DeltaZAngle, animation.RotationData[0].Kind);
+        Assert.Equal(45.0f, animation.RotationData[0].ZAngle);
     }
 
     [Fact]
@@ -703,30 +559,26 @@ public sealed class FnisListReaderTests {
 
         FnisAnimation animation = Assert.Single(result.Value.Animations);
 
-        Assert.Equal(2, animation.MotionDataCount);
-        Assert.Equal(2, animation.RotationDataCount);
+        Assert.Equal(2, animation.MotionData.Count);
+        Assert.Equal(2, animation.RotationData.Count);
 
-        Assert.True(animation.TryGetMotionData(0, out FnisMotion firstMotion));
-        Assert.Equal(1.25f, firstMotion.Time);
-        Assert.Equal(10.0f, firstMotion.DeltaX);
-        Assert.Equal(20.0f, firstMotion.DeltaY);
-        Assert.Equal(30.0f, firstMotion.DeltaZ);
+        Assert.Equal(1.25f, animation.MotionData[0].Time);
+        Assert.Equal(10.0f, animation.MotionData[0].DeltaX);
+        Assert.Equal(20.0f, animation.MotionData[0].DeltaY);
+        Assert.Equal(30.0f, animation.MotionData[0].DeltaZ);
 
-        Assert.True(animation.TryGetMotionData(1, out FnisMotion secondMotion));
-        Assert.Equal(2.0f, secondMotion.Time);
-        Assert.Equal(-10.0f, secondMotion.DeltaX);
-        Assert.Equal(0.0f, secondMotion.DeltaY);
-        Assert.Equal(40.0f, secondMotion.DeltaZ);
+        Assert.Equal(2.0f, animation.MotionData[1].Time);
+        Assert.Equal(-10.0f, animation.MotionData[1].DeltaX);
+        Assert.Equal(0.0f, animation.MotionData[1].DeltaY);
+        Assert.Equal(40.0f, animation.MotionData[1].DeltaZ);
 
-        Assert.True(animation.TryGetRotationData(0, out FnisRotation firstRotation));
-        Assert.Equal(0.5f, firstRotation.Time);
-        Assert.Equal(FnisRotationKind.DeltaZAngle, firstRotation.Kind);
-        Assert.Equal(30.0f, firstRotation.ZAngle);
+        Assert.Equal(0.5f, animation.RotationData[0].Time);
+        Assert.Equal(FnisRotationKind.DeltaZAngle, animation.RotationData[0].Kind);
+        Assert.Equal(30.0f, animation.RotationData[0].ZAngle);
 
-        Assert.True(animation.TryGetRotationData(1, out FnisRotation secondRotation));
-        Assert.Equal(2.0f, secondRotation.Time);
-        Assert.Equal(FnisRotationKind.DeltaZAngle, secondRotation.Kind);
-        Assert.Equal(-60.0f, secondRotation.ZAngle);
+        Assert.Equal(2.0f, animation.RotationData[1].Time);
+        Assert.Equal(FnisRotationKind.DeltaZAngle, animation.RotationData[1].Kind);
+        Assert.Equal(-60.0f, animation.RotationData[1].ZAngle);
     }
 
     [Fact]
@@ -749,25 +601,21 @@ public sealed class FnisListReaderTests {
 
         FnisAnimation first = result.Value.Animations[0];
         Assert.Equal("First", first.AnimEvent(source));
-        Assert.Equal(1, first.MotionDataCount);
-        Assert.Equal(1, first.RotationDataCount);
+        Assert.Single(first.MotionData);
+        Assert.Single(first.RotationData);
 
-        Assert.True(first.TryGetMotionData(0, out FnisMotion firstMotion));
-        Assert.Equal(0.5f, firstMotion.Time);
+        Assert.Equal(0.5f, first.MotionData[0].Time);
 
-        Assert.True(first.TryGetRotationData(0, out FnisRotation firstRotation));
-        Assert.Equal(15.0f, firstRotation.ZAngle);
+        Assert.Equal(15.0f, first.RotationData[0].ZAngle);
 
         FnisAnimation second = result.Value.Animations[1];
         Assert.Equal("Second", second.AnimEvent(source));
-        Assert.Equal(1, second.MotionDataCount);
-        Assert.Equal(1, second.RotationDataCount);
+        Assert.Single(second.MotionData);
+        Assert.Single(second.RotationData);
 
-        Assert.True(second.TryGetMotionData(0, out FnisMotion secondMotion));
-        Assert.Equal(1.25f, secondMotion.Time);
+        Assert.Equal(1.25f, second.MotionData[0].Time);
 
-        Assert.True(second.TryGetRotationData(0, out FnisRotation secondRotation));
-        Assert.Equal(-30.0f, secondRotation.ZAngle);
+        Assert.Equal(-30.0f, second.RotationData[0].ZAngle);
     }
 
     [Fact]
@@ -808,19 +656,35 @@ public sealed class FnisListReaderTests {
             Assert.Equal(expectedEvents[i], animation.AnimEvent(span));
             Assert.Equal(expectedFiles[i], animation.AnimFile(span));
 
+            Assert.Single(animation.MotionData);
+            Assert.Equal(expectedMotionData[i][0], animation.MotionData[0].Time);
+            Assert.Equal(expectedMotionData[i][1], animation.MotionData[0].DeltaX);
+            Assert.Equal(expectedMotionData[i][2], animation.MotionData[0].DeltaY);
+            Assert.Equal(expectedMotionData[i][3], animation.MotionData[0].DeltaZ);
 
-            Assert.Equal(1, animation.MotionDataCount);
-            Assert.True(animation.TryGetMotionData(0, out FnisMotion motion));
-            Assert.Equal(expectedMotionData[i][0], motion.Time);
-            Assert.Equal(expectedMotionData[i][1], motion.DeltaX);
-            Assert.Equal(expectedMotionData[i][2], motion.DeltaY);
-            Assert.Equal(expectedMotionData[i][3], motion.DeltaZ);
-
-            Assert.Equal(1, animation.RotationDataCount);
-
-            Assert.True(animation.TryGetRotationData(0, out FnisRotation rotation));
-            Assert.Equal(FnisRotationKind.DeltaZAngle, rotation.Kind);
-            Assert.Equal(expectedRotationAngles[i], rotation.ZAngle);
+            Assert.Single(animation.RotationData);
+            Assert.Equal(FnisRotationKind.DeltaZAngle, animation.RotationData[0].Kind);
+            Assert.Equal(expectedRotationAngles[i], animation.RotationData[0].ZAngle);
         }
+
+        const string source2 = """
+        b Attack attack.hkx
+        + Second second.hkx
+        """;
+
+        FnisListParseResult<FnisPattern> result2 = new FnisListReader(source2).Parse();
+        Assert.True(result2.IsFailure);
+
+        static string GetCallerFilePath([System.Runtime.CompilerServices.CallerFilePath] string path = "") => path;
+        string sourcePath = GetCallerFilePath();
+
+        Assert.Equal(
+                $"""
+                {sourcePath}:2:1
+                   │
+                 2 │ + Second second.hkx
+                   │ ^ {FnisListParseResult<FnisPattern>.ErrorMessage(FnisListParseErrorKind.InvalidSequence)}
+                """.Replace("\r\n", "\n"),
+            result2.ReadableError(source2, sourcePath));
     }
 }

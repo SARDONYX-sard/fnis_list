@@ -73,7 +73,7 @@ public static class FnisFlagParser {
         int end = input.End;
 
         if ((uint)position > (uint)source.Length || (uint)end > (uint)source.Length) {
-            return FnisListParseResult<FnisFlagSpan>.Failure(FnisListParseErrorKind.InvalidSource, position);
+            return FnisListParseResult<FnisFlagSpan>.Failure(FnisListParseErrorKind.InvalidSourceRange, position);
         }
 
         while (position < end && char.IsWhiteSpace(source[position])) {
@@ -99,7 +99,7 @@ public static class FnisFlagParser {
         int end = input.End;
 
         if ((uint)position > (uint)source.Length || (uint)end > (uint)source.Length) {
-            return FnisListParseResult<FnisFlagSpan>.Failure(FnisListParseErrorKind.InvalidSource, position);
+            return FnisListParseResult<FnisFlagSpan>.Failure(FnisListParseErrorKind.InvalidSourceRange, position);
         }
 
         FnisAnimFlags flags = FnisAnimFlags.None;

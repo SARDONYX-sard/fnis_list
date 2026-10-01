@@ -4,6 +4,41 @@ using Xunit;
 namespace fnis_list.Tests;
 
 public sealed class FnisLineParserTests {
+    [Theory]
+    [InlineData("Version 1", 1, 0)]
+    [InlineData("Version 1.2", 1, 2)]
+    [InlineData("Version   1.2", 1, 2)]
+    //
+    [InlineData("  Version 1.2", 1, 2)]
+    [InlineData("Version 10.20", 10, 20)]
+    //
+    [InlineData("Version V1", 1, 0)]
+    [InlineData("Version v 1.2", 1, 2)]
+    [InlineData("Version V10.20", 10, 20)]
+    [InlineData("Version V 10.20", 10, 20)]
+    [InlineData("Version V 10.20.0", 10, 20)]
+    public void TryParseVersion_ParsesValidVersion(string line, int expectedMajor, int expectedMinor) {
+        bool result = FnisLineParser.TryParseVersion(line, out int major, out int minor);
+        Assert.True(result);
+        Assert.Equal(expectedMajor, major);
+        Assert.Equal(expectedMinor, minor);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("Version")]
+    [InlineData("Version v")]
+    [InlineData("Version v.")]
+    [InlineData("Version .1")]
+    [InlineData("Version 1.")]
+    [InlineData("Version abc")]
+    [InlineData("Version vabc")]
+    [InlineData("Version 1.abc")]
+    public void TryParseVersion_ReturnsFalseForInvalidVersion(string line) {
+        bool result = FnisLineParser.TryParseVersion(line, out int _, out int _);
+        Assert.False(result);
+    }
+
     [Fact]
     public void ParsesBasicAnimationWithFlags() {
         const string source = "b -a,ac,h Attack attack.hkx";
@@ -56,21 +91,16 @@ public sealed class FnisLineParserTests {
     [Fact]
     public void ParsesTriggers() {
         const string source = "b -ac,THit/0.5,TEnd/1.25 Simple simple.hkx";
-
         FnisAnimation animation = ParseSingle(source);
 
         Assert.Equal(FnisAnimFlags.AnimatedCamera, animation.Flags);
-        Assert.Equal(2, animation.TriggerCount);
+        Assert.Equal(2, animation.Triggers.Count);
+        Assert.Empty(animation.Objects);
 
-        Assert.True(animation.TryGetTrigger(source, 0, out FnisTrigger trigger0));
-        Assert.Equal("Hit", trigger0.Event);
-        Assert.Equal(0.5, trigger0.Time);
-
-        Assert.True(animation.TryGetTrigger(source, 1, out FnisTrigger trigger1));
-        Assert.Equal("End", trigger1.Event);
-        Assert.Equal(1.25, trigger1.Time);
-
-        Assert.Equal(0, animation.ObjectCount);
+        Assert.Equal("Hit", animation.Triggers[0].Event.Slice(source));
+        Assert.Equal(0.5, animation.Triggers[0].Time);
+        Assert.Equal("End", animation.Triggers[1].Event.Slice(source));
+        Assert.Equal(1.25, animation.Triggers[1].Time);
     }
 
     [Theory]
@@ -97,26 +127,20 @@ public sealed class FnisLineParserTests {
         Assert.Equal("paired_hugb.hkx", animation.AnimFile(source));
         Assert.Equal(FnisAnimFlags.AnimObjects, animation.Flags);
         Assert.Equal(20.0f, animation.Duration);
-        Assert.Equal(1, animation.TriggerCount);
-        Assert.Equal(1, animation.Trigger2Count);
 
-        Assert.True(animation.TryGetTrigger(source, 0, out FnisTrigger trigger));
-        Assert.Equal("Hit", trigger.Event);
-        Assert.Equal(2.5, trigger.Time);
+        Assert.Single(animation.Triggers);
+        Assert.Equal("Hit", animation.Triggers[0].Event.Slice(source));
+        Assert.Equal(2.5, animation.Triggers[0].Time);
 
-        Assert.True(animation.TryGetTrigger2(source, 0, out FnisTrigger trigger2));
-        Assert.Equal("2_Kill", trigger2.Event);
-        Assert.Equal(3.25, trigger2.Time);
+        Assert.Single(animation.Triggers2);
+        Assert.Equal("2_Kill", animation.Triggers2[0].Event.Slice(source));
+        Assert.Equal(3.25, animation.Triggers2[0].Time);
 
-        Assert.Equal(2, animation.ObjectCount);
-
-        Assert.True(animation.TryGetObject(source, 0, out FnisAnimObject sword));
-        Assert.Equal("Sword", sword.Name);
-        Assert.Equal(FnisActorRole.Active, sword.Role);
-
-        Assert.True(animation.TryGetObject(source, 1, out FnisAnimObject axe));
-        Assert.Equal("Axe", axe.Name);
-        Assert.Equal(FnisActorRole.Passive, axe.Role);
+        Assert.Equal(2, animation.Objects.Count);
+        Assert.Equal("Sword", animation.Objects[0].Name.Slice(source));
+        Assert.Equal(FnisActorRole.Active, animation.Objects[0].Role);
+        Assert.Equal("Axe", animation.Objects[1].Name.Slice(source));
+        Assert.Equal(FnisActorRole.Passive, animation.Objects[1].Role);
     }
 
     [Fact]
@@ -130,25 +154,20 @@ public sealed class FnisLineParserTests {
         Assert.Equal("killmove.hkx", animation.AnimFile(source));
         Assert.Equal(FnisAnimFlags.AnimatedCamera | FnisAnimFlags.HeadTracking | FnisAnimFlags.AnimObjects, animation.Flags);
         Assert.Equal(35.5f, animation.Duration);
-        Assert.Equal(2, animation.TriggerCount);
-        Assert.Equal(0, animation.Trigger2Count);
-        Assert.Equal(2, animation.ObjectCount);
 
-        Assert.True(animation.TryGetTrigger(source, 0, out FnisTrigger start));
-        Assert.Equal("Start", start.Event);
-        Assert.Equal(1.0, start.Time);
+        Assert.Equal(2, animation.Triggers.Count);
+        Assert.Equal("Start", animation.Triggers[0].Event.Slice(source));
+        Assert.Equal(1.0f, animation.Triggers[0].Time);
+        Assert.Equal("End", animation.Triggers[1].Event.Slice(source));
+        Assert.Equal(20.0f, animation.Triggers[1].Time);
 
-        Assert.True(animation.TryGetTrigger(source, 1, out FnisTrigger end));
-        Assert.Equal("End", end.Event);
-        Assert.Equal(20.0, end.Time);
+        Assert.Empty(animation.Triggers2);
 
-        Assert.True(animation.TryGetObject(source, 0, out FnisAnimObject weapon));
-        Assert.Equal("Weapon", weapon.Name);
-        Assert.Equal(FnisActorRole.Active, weapon.Role);
-
-        Assert.True(animation.TryGetObject(source, 1, out FnisAnimObject victim));
-        Assert.Equal("Victim", victim.Name);
-        Assert.Equal(FnisActorRole.Passive, victim.Role);
+        Assert.Equal(2, animation.Objects.Count);
+        Assert.Equal("Weapon", animation.Objects[0].Name.Slice(source));
+        Assert.Equal(FnisActorRole.Active, animation.Objects[0].Role);
+        Assert.Equal("Victim", animation.Objects[1].Name.Slice(source));
+        Assert.Equal(FnisActorRole.Passive, animation.Objects[1].Role);
     }
 
 
@@ -157,7 +176,7 @@ public sealed class FnisLineParserTests {
     [InlineData("pa -o Attack attack.hkx Sword/1 Shield/2")]
     public void ParsesObjectsOk(string source) {
         FnisAnimation animation = ParseSingle(source);
-        Assert.True(animation.ObjectCount > 0);
+        Assert.True(animation.Objects.Count > 0);
     }
 
     [Theory]
@@ -187,7 +206,7 @@ public sealed class FnisLineParserTests {
 
         Assert.Equal("Attack", animation.AnimEvent(source));
         Assert.Equal("attack.hkx", animation.AnimFile(source));
-        Assert.Equal(0, animation.ObjectCount);
+        Assert.Empty(animation.Objects);
     }
 
     [Fact]
@@ -206,13 +225,13 @@ public sealed class FnisLineParserTests {
 
         Assert.Equal("Attack", animation.AnimEvent(source));
         Assert.Equal("attack.hkx", animation.AnimFile(source));
-        Assert.Equal(2, animation.ObjectCount);
+        Assert.Equal(2, animation.Objects.Count);
     }
 
     [Theory]
     [InlineData("", FnisListParseErrorKind.UnexpectedEnd)]
-    [InlineData("x", FnisListParseErrorKind.InvalidSyntax)]
-    [InlineData("invalid Attack attack.hkx", FnisListParseErrorKind.InvalidSyntax)]
+    [InlineData("x", FnisListParseErrorKind.InvalidAnimationType)]
+    [InlineData("invalid Attack attack.hkx", FnisListParseErrorKind.InvalidAnimationType)]
     public void RejectsInvalidType(string source, FnisListParseErrorKind expectedError) {
         FnisListParseResult<FnisAnimation> result = FnisLineParser.Parse(source, new TextSpan(0, source.Length));
         Assert.True(result.IsFailure);

@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace fnis_list;
 
@@ -15,26 +16,30 @@ public static class FnisAnimVarParser {
         int end = lineSpan.End;
 
         if ((uint)position > (uint)source.Length || (uint)end > (uint)source.Length) {
-            return FnisListParseResult<FnisAnimVarSpan>.Failure(FnisListParseErrorKind.InvalidSource, position);
+            return FnisListParseResult<FnisAnimVarSpan>.Failure(FnisListParseErrorKind.InvalidSourceRange, position);
         }
 
         // AnimVar <Name> [ BOOL | INT32 | REAL ] <numeric_value>
         FnisTokenParser.SkipWhitespace(source, ref position, end);
 
+        // keyword
         if (!TryConsumeToken(source, ref position, end, "AnimVar")) {
-            return Failure(position);
+            return Failure(FnisListParseErrorKind.InvalidAnimVarDefinition, position);
         }
 
+        // Name
         if (!TryReadToken(source, ref position, end, out TextSpan name)) {
-            return Failure(position);
+            return Failure(FnisListParseErrorKind.InvalidAnimVarDefinition, position);
         }
 
+        // Type
         if (!TryReadToken(source, ref position, end, out TextSpan type)) {
-            return Failure(position);
+            return Failure(FnisListParseErrorKind.InvalidAnimVarType, position);
         }
 
+        // Value
         if (!TryReadToken(source, ref position, end, out TextSpan value)) {
-            return Failure(position);
+            return Failure(FnisListParseErrorKind.InvalidAnimVarValue, position);
         }
 
         ReadOnlySpan<char> typeText = type.Slice(source);
@@ -49,12 +54,12 @@ public static class FnisAnimVarParser {
                 return Success(new FnisAnimVarSpan(name, FnisAnimVarValue.FromBool(true)), position);
             }
 
-            return Failure(value.Pos);
+            return Failure(FnisListParseErrorKind.InvalidAnimVarValue, value.Pos);
         }
 
         if (typeText.Equals("INT32", StringComparison.OrdinalIgnoreCase)) {
             if (!int.TryParse(valueText, NumberStyles.Integer, CultureInfo.InvariantCulture, out int intValue)) {
-                return Failure(value.Pos);
+                return Failure(FnisListParseErrorKind.InvalidAnimVarValue, value.Pos);
             }
 
             return Success(new FnisAnimVarSpan(name, FnisAnimVarValue.FromInt32(intValue)), position);
@@ -62,21 +67,24 @@ public static class FnisAnimVarParser {
 
         if (typeText.Equals("REAL", StringComparison.OrdinalIgnoreCase)) {
             if (!float.TryParse(valueText, NumberStyles.Float, CultureInfo.InvariantCulture, out float realValue)) {
-                return Failure(value.Pos);
+                return Failure(FnisListParseErrorKind.InvalidAnimVarValue, value.Pos);
             }
 
             return Success(new FnisAnimVarSpan(name, FnisAnimVarValue.FromReal(realValue)), position);
         }
 
-        return Failure(type.Pos);
+        return Failure(FnisListParseErrorKind.InvalidAnimVarValue, type.Pos);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static FnisListParseResult<FnisAnimVarSpan> Success(FnisAnimVarSpan value, int position) {
         return FnisListParseResult<FnisAnimVarSpan>.Success(value, position);
     }
 
-    private static FnisListParseResult<FnisAnimVarSpan> Failure(int position) {
-        return FnisListParseResult<FnisAnimVarSpan>.Failure(FnisListParseErrorKind.InvalidSyntax, position);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static FnisListParseResult<FnisAnimVarSpan> Failure(FnisListParseErrorKind error, int position) {
+        return FnisListParseResult<FnisAnimVarSpan>.Failure(error, position);
     }
 
     private static bool TryConsumeToken(ReadOnlySpan<char> source, ref int position, int end, ReadOnlySpan<char> token) {

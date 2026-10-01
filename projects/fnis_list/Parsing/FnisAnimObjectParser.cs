@@ -50,7 +50,7 @@ public static class FnisAnimObjectParser {
         int end = input.End;
 
         if ((uint)position > (uint)source.Length || (uint)end > (uint)source.Length || position > end) {
-            return FnisListParseResult<List<FnisAnimObjectSpan>>.Failure(FnisListParseErrorKind.InvalidSource, position);
+            return FnisListParseResult<List<FnisAnimObjectSpan>>.Failure(FnisListParseErrorKind.InvalidSourceRange, position);
         }
 
         List<FnisAnimObjectSpan> objects = new();

@@ -13,5 +13,12 @@
         "**/.git/objects/**": true
         // "**/obj/**": true
     },
-    "cSpell.words": ["FNIS", "Headtracking", "Modders", "Skyrim", "Xunit"]
+    "cSpell.words": [
+        "defaultmale",
+        "FNIS",
+        "Headtracking",
+        "Modders",
+        "Skyrim",
+        "Xunit"
+    ]
 }

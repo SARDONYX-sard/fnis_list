@@ -125,11 +125,9 @@ public sealed class FnisFlagParserTests {
     [InlineData("a,D1.0,THi/0.5,h,TEn/1.25", 1, "En", 1.25f)]
     public void Parse_ParsesTrigger(string input, int index, string expectedEvent, float expectedTime) {
         FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(input.AsSpan(), new TextSpan(0, input.Length));
-
         Assert.True(result.IsSuccess);
 
         FnisTriggerSpan trigger = result.Value.Triggers[index];
-
         Assert.Equal(expectedEvent, trigger.Event.Slice(input));
         Assert.Equal(expectedTime, trigger.Time);
     }
@@ -152,7 +150,6 @@ public sealed class FnisFlagParserTests {
         FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(input.AsSpan(), new TextSpan(0, input.Length));
 
         Assert.True(result.IsSuccess);
-
         FnisTriggerSpan trigger = result.Value.Triggers2[index];
 
         Assert.Equal(expectedEvent, trigger.Event.Slice(input));
@@ -167,17 +164,12 @@ public sealed class FnisFlagParserTests {
         FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(source.AsSpan(), new TextSpan(position, source.Length - position));
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(
-            FnisAnimFlags.Acyclic |
-            FnisAnimFlags.HeadTracking |
-            FnisAnimFlags.MotionDriven,
-            result.Value.Flags);
+        Assert.Equal(FnisAnimFlags.Acyclic | FnisAnimFlags.HeadTracking | FnisAnimFlags.MotionDriven, result.Value.Flags);
     }
 
     [Fact]
     public void Parse_ReturnsNextPos() {
         const string source = "a,h,md";
-
         FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(source.AsSpan(), new TextSpan(0, source.Length));
 
         Assert.True(result.IsSuccess);
@@ -187,7 +179,6 @@ public sealed class FnisFlagParserTests {
     [Fact]
     public void Parse_NextPosIsAbsolute() {
         const string source = "prefix,a,h,md";
-
         FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(source.AsSpan(), new TextSpan(7, source.Length - 7));
 
         Assert.True(result.IsSuccess);
@@ -197,11 +188,9 @@ public sealed class FnisFlagParserTests {
     [Fact]
     public void Parse_NextPosCanBeUsedToReadNextPart() {
         const string source = "a,h,md Attack  attack.hkx";
-
         FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(source.AsSpan(), new TextSpan(0, source.Length));
 
         Assert.True(result.IsSuccess);
-
         int nextPos = result.Value.NextPos;
 
         Assert.Equal(' ', source[nextPos]);
@@ -232,7 +221,7 @@ public sealed class FnisFlagParserTests {
         FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(source.AsSpan(), new TextSpan(position, 0));
 
         Assert.True(result.IsFailure);
-        Assert.Equal(FnisListParseErrorKind.InvalidSource, result.Error);
+        Assert.Equal(FnisListParseErrorKind.InvalidSourceRange, result.Error);
         Assert.Equal(position, result.Pos);
     }
 
@@ -242,11 +231,7 @@ public sealed class FnisFlagParserTests {
         FnisListParseResult<FnisFlagSpan> result = FnisFlagParser.ParseRaw(source.AsSpan(), new TextSpan(0, source.Length));
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(
-            FnisAnimFlags.Acyclic |
-            FnisAnimFlags.HeadTracking |
-            FnisAnimFlags.MotionDriven,
-            result.Value.Flags);
+        Assert.Equal(FnisAnimFlags.Acyclic | FnisAnimFlags.HeadTracking | FnisAnimFlags.MotionDriven, result.Value.Flags);
         Assert.Equal(6, result.Value.NextPos);
         Assert.Equal(' ', source[result.Value.NextPos]);
     }

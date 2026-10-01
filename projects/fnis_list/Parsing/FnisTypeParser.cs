@@ -77,7 +77,7 @@ public static class FnisTypeParser {
             return Success(FnisAnimType.Sequenced, position);
         }
 
-        return FnisListParseResult<FnisTypeSpan>.Failure(FnisListParseErrorKind.InvalidSyntax, position);
+        return FnisListParseResult<FnisTypeSpan>.Failure(FnisListParseErrorKind.InvalidAnimationType, position);
     }
 
     private static FnisListParseResult<FnisTypeSpan> Success(FnisAnimType type, int nextPos) {

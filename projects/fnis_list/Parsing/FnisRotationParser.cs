@@ -26,20 +26,20 @@ public static class FnisRotationParser {
         int position = 0;
 
         if (!TryMatchTokenIgnoreCase(text, ref position, "MD")) {
-            return Failure<FnisMotion>(line.Pos + position);
+            return FailureMotion<FnisMotion>(line.Pos + position);
         }
 
         if (!TryReadFloat(text, ref position, out float time) ||
             !TryReadFloat(text, ref position, out float deltaX) ||
             !TryReadFloat(text, ref position, out float deltaY) ||
             !TryReadFloat(text, ref position, out float deltaZ)) {
-            return Failure<FnisMotion>(line.Pos + position);
+            return FailureMotion<FnisMotion>(line.Pos + position);
         }
 
         SkipWhitespace(text, ref position);
 
         if (position != text.Length) {
-            return Failure<FnisMotion>(line.Pos + position);
+            return FailureMotion<FnisMotion>(line.Pos + position);
         }
 
         return FnisListParseResult<FnisMotion>.Success(new FnisMotion(time, deltaX, deltaY, deltaZ), line.End);
@@ -52,11 +52,11 @@ public static class FnisRotationParser {
         ReadOnlySpan<char> text = line.Slice(source); int position = 0;
 
         if (!TryMatchTokenIgnoreCase(text, ref position, "RD")) {
-            return Failure<FnisRotation>(line.Pos + position);
+            return FailureRotation<FnisRotation>(line.Pos + position);
         }
 
         if (!TryReadFloat(text, ref position, out float time)) {
-            return Failure<FnisRotation>(line.Pos + position);
+            return FailureRotation<FnisRotation>(line.Pos + position);
         }
 
         int dataStart = position;
@@ -73,7 +73,7 @@ public static class FnisRotationParser {
             return FnisListParseResult<FnisRotation>.Success(zAngle, line.End);
         }
 
-        return Failure<FnisRotation>(line.Pos + dataStart);
+        return FailureRotation<FnisRotation>(line.Pos + dataStart);
     }
 
     private static bool TryParseQuaternion(ReadOnlySpan<char> source, ref int position, float time, out FnisRotation rotation) {
@@ -164,7 +164,12 @@ public static class FnisRotationParser {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static FnisListParseResult<T> Failure<T>(int position) {
-        return FnisListParseResult<T>.Failure(FnisListParseErrorKind.InvalidSyntax, position);
+    private static FnisListParseResult<T> FailureMotion<T>(int position) {
+        return FnisListParseResult<T>.Failure(FnisListParseErrorKind.InvalidMotion, position);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static FnisListParseResult<T> FailureRotation<T>(int position) {
+        return FnisListParseResult<T>.Failure(FnisListParseErrorKind.InvalidRotation, position);
     }
 }

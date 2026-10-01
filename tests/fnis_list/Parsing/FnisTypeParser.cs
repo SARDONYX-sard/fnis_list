@@ -19,10 +19,10 @@ public sealed class FnisTypeParserTests {
     [InlineData("o", FnisAnimType.AnimObject, 1)]
     [InlineData("s", FnisAnimType.Sequenced, 1)]
     public void ParsesType(string source, FnisAnimType expectedType, int expectedNextPos) {
-        FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length)); Assert.True(result.IsSuccess);
+        FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
 
+        Assert.True(result.IsSuccess);
         FnisTypeSpan value = result.Value;
-
         Assert.Equal(expectedType, value.Type);
         Assert.Equal(expectedNextPos, value.NextPos);
         Assert.Equal(expectedNextPos, result.Pos);
@@ -37,7 +37,6 @@ public sealed class FnisTypeParserTests {
         FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
 
         Assert.True(result.IsSuccess);
-
         Assert.Equal(expectedType, result.Value.Type);
         Assert.Equal(expectedNextPos, result.Value.NextPos);
         Assert.Equal(expectedNextPos, result.Pos);
@@ -54,7 +53,6 @@ public sealed class FnisTypeParserTests {
         FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
 
         Assert.True(result.IsSuccess);
-
         int expectedNextPos = source.IndexOf(' ');
 
         Assert.Equal(expectedNextPos, result.Value.NextPos);
@@ -69,7 +67,6 @@ public sealed class FnisTypeParserTests {
         FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
 
         Assert.True(result.IsSuccess);
-
         Assert.Equal(expectedType, result.Value.Type);
         Assert.Equal(expectedNextPos, result.Value.NextPos);
     }
@@ -97,7 +94,7 @@ public sealed class FnisTypeParserTests {
     public void RejectsInvalidType(string source) {
         FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, source.Length));
         Assert.True(result.IsFailure);
-        Assert.Equal(FnisListParseErrorKind.InvalidSyntax, result.Error);
+        Assert.Equal(FnisListParseErrorKind.InvalidAnimationType, result.Error);
         Assert.Equal(0, result.Pos);
     }
 
@@ -108,7 +105,6 @@ public sealed class FnisTypeParserTests {
         FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(3, 1));
 
         Assert.True(result.IsSuccess);
-
         Assert.Equal(FnisAnimType.Basic, result.Value.Type);
         Assert.Equal(4, result.Value.NextPos);
         Assert.Equal(4, result.Pos);
@@ -121,7 +117,6 @@ public sealed class FnisTypeParserTests {
         FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, 1));
 
         Assert.True(result.IsSuccess);
-
         Assert.Equal(FnisAnimType.Basic, result.Value.Type);
         Assert.Equal(1, result.Value.NextPos);
     }
@@ -133,7 +128,6 @@ public sealed class FnisTypeParserTests {
         FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(0, 1));
 
         Assert.True(result.IsSuccess);
-
         Assert.Equal(FnisAnimType.Sequenced, result.Value.Type);
         Assert.Equal(1, result.Value.NextPos);
         Assert.Equal(1, result.Pos);
@@ -146,7 +140,6 @@ public sealed class FnisTypeParserTests {
         FnisListParseResult<FnisTypeSpan> result = FnisTypeParser.Parse(source.AsSpan(), new TextSpan(3, 3));
 
         Assert.True(result.IsSuccess);
-
         Assert.Equal(FnisAnimType.Basic, result.Value.Type);
         Assert.Equal(4, result.Value.NextPos);
     }
