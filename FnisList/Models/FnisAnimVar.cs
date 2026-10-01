@@ -1,4 +1,4 @@
-namespace fnis_list;
+namespace FnisList;
 
 /// <summary>
 /// Represents the typed value of an <c>AnimVar</c> definition.

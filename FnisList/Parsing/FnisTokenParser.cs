@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace fnis_list;
+namespace FnisList;
 
 internal readonly struct FnisTokenSpan {
     public TextSpan Span { get; }

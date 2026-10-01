@@ -1,6 +1,6 @@
 using System;
 
-namespace fnis_list;
+namespace FnisList;
 
 public readonly ref struct FnisTrigger {
     private readonly ReadOnlySpan<char> _event;

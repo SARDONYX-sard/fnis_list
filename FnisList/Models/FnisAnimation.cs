@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-namespace fnis_list;
+namespace FnisList;
 
 public readonly struct FnisAnimation {
     private readonly FnisAnimType _type;

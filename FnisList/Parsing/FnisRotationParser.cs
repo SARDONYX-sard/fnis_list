@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
-namespace fnis_list;
+namespace FnisList;
 
 /// <summary>
 /// Parses FNIS motion and rotation data.

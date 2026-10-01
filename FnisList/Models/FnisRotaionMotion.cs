@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 
-namespace fnis_list;
+namespace FnisList;
 
 /// <summary>
 /// Represents FNIS motion data from an <c>MD</c> definition.

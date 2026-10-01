@@ -1,4 +1,4 @@
-namespace fnis_list;
+namespace FnisList;
 
 /// <summary>
 /// Core FNIS animation types from <c>&lt;AnimType&gt;</c> syntax.

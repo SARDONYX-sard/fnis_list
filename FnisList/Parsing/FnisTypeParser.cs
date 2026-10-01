@@ -1,6 +1,6 @@
 using System;
 
-namespace fnis_list;
+namespace FnisList;
 
 public readonly struct FnisTypeSpan {
     public FnisAnimType Type { get; }

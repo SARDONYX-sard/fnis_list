@@ -3,7 +3,7 @@
 // This preserves the safety invariant required by CollectionsMarshal.AsSpan.
 using System.Collections.Generic;
 
-namespace fnis_list;
+namespace FnisList;
 
 /// <summary>
 /// Represents an alternative animation set declared by an <c>AAset</c> line.

@@ -1,6 +1,6 @@
 using System;
 
-namespace fnis_list;
+namespace FnisList;
 
 /// <summary>
 /// Represents a slice of text by its start position and length.

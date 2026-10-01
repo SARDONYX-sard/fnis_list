@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace fnis_list;
+namespace FnisList;
 
 /// <summary>
 /// Parses an entire FNIS list file.

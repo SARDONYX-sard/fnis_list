@@ -1,6 +1,6 @@
 using System;
 
-namespace fnis_list;
+namespace FnisList;
 
 public readonly ref struct FnisAnimObject {
     private readonly ReadOnlySpan<char> _name;

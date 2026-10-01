@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace fnis_list;
+namespace FnisList;
 
 /// <summary>
 /// Represents the parsed contents of an FNIS list file.

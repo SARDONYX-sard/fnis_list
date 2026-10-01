@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 
-namespace fnis_list;
+namespace FnisList;
 
 /// <summary>
 /// Parses FNIS alternate-animation blocks.

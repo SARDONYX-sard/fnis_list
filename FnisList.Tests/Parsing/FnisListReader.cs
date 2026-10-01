@@ -1,7 +1,7 @@
 using System;
 using Xunit;
 
-namespace fnis_list.Tests;
+namespace FnisList.Tests;
 
 public sealed class FnisListReaderTests {
     [Theory]
@@ -622,16 +622,16 @@ public sealed class FnisListReaderTests {
     public void ExampleTest() {
         // string source = File.ReadAllText("FNIS_List.txt");
         string source = """
-    Version 7.0
+            Version 7.0
 
-    b Attack attack.hkx
-    MD 1.25 10 20 30
-    RD 1.25 45
+            b Attack attack.hkx
+            MD 1.25 10 20 30
+            RD 1.25 45
 
-    b Walk walk.hkx
-    MD 2.0 0 10 0
-    RD 2.0 -30
-    """;
+            b Walk walk.hkx
+            MD 2.0 0 10 0
+            RD 2.0 -30
+            """;
 
         ReadOnlySpan<char> span = source.AsSpan();
 

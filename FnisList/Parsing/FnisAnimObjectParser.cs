@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace fnis_list;
+namespace FnisList;
 
 /// <summary>
 /// Parsed FNIS animation object data.

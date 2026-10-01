@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="../../projects/fnis_list/FnisList.csproj" />
+        <ProjectReference Include="../FnisList/FnisList.csproj" />
     </ItemGroup>
 
 </Project>

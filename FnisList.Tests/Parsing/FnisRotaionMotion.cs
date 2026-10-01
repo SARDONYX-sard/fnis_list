@@ -2,7 +2,7 @@ using System;
 using System.Numerics;
 using Xunit;
 
-namespace fnis_list.Tests;
+namespace FnisList.Tests;
 
 public sealed class FnisRotationParserTests {
     [Theory]

@@ -1,7 +1,7 @@
 using System;
 using Xunit;
 
-namespace fnis_list.Tests;
+namespace FnisList.Tests;
 
 public sealed class FnisLineParserTests {
     [Theory]

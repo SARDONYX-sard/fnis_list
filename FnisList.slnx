@@ -1,4 +1,4 @@
 <Solution>
-    <Project Path="projects/fnis_list/FnisList.csproj" />
-    <Project Path="tests/fnis_list/FnisList.Tests.csproj" />
+    <Project Path="FnisList/FnisList.csproj" />
+    <Project Path="FnisList.Tests/FnisList.Tests.csproj" />
 </Solution>
