@@ -48,7 +48,7 @@ public readonly struct FnisAnimTriggerSpan {
     /// <summary>
     /// Gets the trigger definitions associated with the animation.
     /// </summary>
-    public List<FnisTriggerSpan> Triggers => this._triggers;
+    public IReadOnlyList<FnisTriggerSpan> Triggers => this._triggers;
 }
 
 /// <summary>
